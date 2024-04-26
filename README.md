@@ -16,9 +16,15 @@ python proxy-cli.py -h 10.2.1.0 -p 7890 -bypass-domains *.baidu.com,*.gitee.com
 
 ### TODO
 
-* [ ] Make this way automatic by using the applescript.
+* [ ] Make system proxy setting configuration automatic.
     * [x] MacOS
     * [ ] Windows
     * [ ] Linux
+* [ ] Make the command line setting configuration automatic.
+    * [ ] MacOS
+        * [x] .zshrc
+        * [ ] auto detect the env file.
+    * [ ] Windows
+    * [ ] Linux
 * [ ] 实现从数据中心拉下来当前地址里位置对应的忽略列表, 以此实现根据地理位置确定忽略哪些地址走代理.
-* [ ] 利用ClashWindows的源码实现自动配置系统代理设置.π
+* [ ] Combine with the [zerotier-cli](https://github.com/zerotier/ZeroTierOne).
