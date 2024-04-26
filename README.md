@@ -28,3 +28,9 @@ python proxy-cli.py -h 10.2.1.0 -p 7890 -bypass-domains *.baidu.com,*.gitee.com
     * [ ] Linux
 * [ ] 实现从数据中心拉下来当前地址里位置对应的忽略列表, 以此实现根据地理位置确定忽略哪些地址走代理.
 * [ ] Combine with the [zerotier-cli](https://github.com/zerotier/ZeroTierOne).
+* [ ] Implementing upstream-configurable clash / agent.
+* [ ] Publish as python site-packages.
+* [ ] Release the pre-built packages for all the platform:
+    * [ ] MacOSX
+    * [ ] Windows
+    * [ ] Linux
