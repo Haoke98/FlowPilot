@@ -11,7 +11,7 @@ import logging
 import os
 
 from utils import logger
-from utils.proxy_helper import set_proxy_config
+from utils.proxy_helper.macosx import set_web_proxy, set_cmd_proxy
 
 if __name__ == '__main__':
     logger.init("FlowPilot", console_level=logging.INFO)
@@ -26,8 +26,9 @@ if __name__ == '__main__':
             print(fp, _list)
             ignores_list.extend(_list)
     bypass_domains = list(set(ignores_list))
-    set_proxy_config(host, port, bypass_domains)
-    print("export http_proxy={}".format(host))
-    print("export https_proxy={}".format(port))
-    # 控制台不支持范型和通配符, 必须是确切的域名
-    print(f'export no_proxy="%s"' % (",".join(bypass_domains)))
+    set_web_proxy(host, port, bypass_domains)
+    set_cmd_proxy(host, port, bypass_domains)
+    # print("export http_proxy={}".format(host))
+    # print("export https_proxy={}".format(port))
+    # # 控制台不支持范型和通配符, 必须是确切的域名
+    # print(f'export no_proxy="%s"' % (",".join(bypass_domains)))

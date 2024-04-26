@@ -1,6 +1,6 @@
 import click
 
-from utils.proxy_helper import set_proxy_config
+from utils.proxy_helper import set_web_proxy
 
 VERSION = "0.1.0"
 
@@ -12,7 +12,8 @@ VERSION = "0.1.0"
 @click.option("--bypass-domains", type=list, default=['127.0.0.1', "192.168.0.0/16"],
               help="The domains to bypass the proxy.")
 def main(host, port, socks_port, bypass_domains):
-    set_proxy_config(host, port, bypass_domains)
+    set_web_proxy(host, port, bypass_domains)
+    set_cmd_proxy(host, port, bypass_domains)
     print("Proxy settings updated successfully.")
 
 
