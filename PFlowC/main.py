@@ -20,11 +20,52 @@ home_dir = os.path.expanduser("~/.PFlowC")
 config_fp = os.path.join(home_dir, "config.json")
 log_dir = os.path.join(home_dir, "logs")
 logger.init("PFlowC", console_level=logging.INFO, log_dir=log_dir)
+# alpha (https://www.bootschool.net/ascii)
+banner_txt = """
+          _____                    _____                    _____           _______                   _____                    _____          
+         /\    \                  /\    \                  /\    \         /::\    \                 /\    \                  /\    \         
+        /::\    \                /::\    \                /::\____\       /::::\    \               /::\____\                /::\    \        
+       /::::\    \              /::::\    \              /:::/    /      /::::::\    \             /:::/    /               /::::\    \       
+      /::::::\    \            /::::::\    \            /:::/    /      /::::::::\    \           /:::/   _/___            /::::::\    \      
+     /:::/\:::\    \          /:::/\:::\    \          /:::/    /      /:::/~~\:::\    \         /:::/   /\    \          /:::/\:::\    \     
+    /:::/__\:::\    \        /:::/__\:::\    \        /:::/    /      /:::/    \:::\    \       /:::/   /::\____\        /:::/  \:::\    \    
+   /::::\   \:::\    \      /::::\   \:::\    \      /:::/    /      /:::/    / \:::\    \     /:::/   /:::/    /       /:::/    \:::\    \   
+  /::::::\   \:::\    \    /::::::\   \:::\    \    /:::/    /      /:::/____/   \:::\____\   /:::/   /:::/   _/___    /:::/    / \:::\    \  
+ /:::/\:::\   \:::\____\  /:::/\:::\   \:::\    \  /:::/    /      |:::|    |     |:::|    | /:::/___/:::/   /\    \  /:::/    /   \:::\    \ 
+/:::/  \:::\   \:::|    |/:::/  \:::\   \:::\____\/:::/____/       |:::|____|     |:::|    ||:::|   /:::/   /::\____\/:::/____/     \:::\____\
+\::/    \:::\  /:::|____|\::/    \:::\   \::/    /\:::\    \        \:::\    \   /:::/    / |:::|__/:::/   /:::/    /\:::\    \      \::/    /
+ \/_____/\:::\/:::/    /  \/____/ \:::\   \/____/  \:::\    \        \:::\    \ /:::/    /   \:::\/:::/   /:::/    /  \:::\    \      \/____/ 
+          \::::::/    /            \:::\    \       \:::\    \        \:::\    /:::/    /     \::::::/   /:::/    /    \:::\    \             
+           \::::/    /              \:::\____\       \:::\    \        \:::\__/:::/    /       \::::/___/:::/    /      \:::\    \            
+            \::/____/                \::/    /        \:::\    \        \::::::::/    /         \:::\__/:::/    /        \:::\    \           
+             ~~                       \/____/          \:::\    \        \::::::/    /           \::::::::/    /          \:::\    \          
+                                                        \:::\    \        \::::/    /             \::::::/    /            \:::\    \         
+                                                         \:::\____\        \::/____/               \::::/    /              \:::\____\        
+                                                          \::/    /         ~~                      \::/____/                \::/    /        
+                                                           \/____/                                   ~~                       \/____/         
+
+"""
+# ansi_shadow (https://www.bootschool.net/ascii)
+banner_txt = """
+██████╗ ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗
+██╔══██╗██╔════╝██║     ██╔═══██╗██║    ██║██╔════╝
+██████╔╝█████╗  ██║     ██║   ██║██║ █╗ ██║██║     
+██╔═══╝ ██╔══╝  ██║     ██║   ██║██║███╗██║██║     
+██║     ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╗
+╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
+"""
 
 
-@click.group(
-    help="Command line interface for Proxy Flow Controller with basic auto configurations.\nVersion: {}".format(
-        get_version()))
+def print_banner():
+    click.secho(banner_txt, fg='green', bold=True)
+    click.secho("Command line interface for Proxy Flow Controller with basic auto configurations.", fg='yellow',bold=True)
+    click.secho("Version: {}".format(get_version())+" "*20+"By: BlackHaoke<Haoke98@outlook.com>", fg='red', bold=True)
+
+
+print_banner()
+
+
+@click.group()
 def main():
     pass
 
@@ -59,7 +100,7 @@ def on():
     set_cmd_proxy(host, port, bypass_domains)
 
 
-@main.command()
+@main.command(help="Set off and clear all proxy config.")
 def off():
     stop_web_proxy()
     clear_cmd_proxy()

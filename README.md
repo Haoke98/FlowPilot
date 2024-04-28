@@ -3,16 +3,40 @@
 A net flow pilot in order to handle some proxy configuration automatically.
 
 ### Usage
+1. Install
+    ```shell
+    pip install PFlowC -U
+    ```
+2. Run
+    ```shell
+    pflow-cli on
+    ```
+    ![](assets/cm_screenshot.png)
+    ```shell
+    pflow --help
+    ```
+   ```
+        
+    ██████╗ ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗
+    ██╔══██╗██╔════╝██║     ██╔═══██╗██║    ██║██╔════╝
+    ██████╔╝█████╗  ██║     ██║   ██║██║ █╗ ██║██║     
+    ██╔═══╝ ██╔══╝  ██║     ██║   ██║██║███╗██║██║     
+    ██║     ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╗
+    ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
+    
+    Command line interface for Proxy Flow Controller with basic auto configurations.
+    Version: 1.4.0                    By: BlackHaoke<Haoke98@outlook.com>
+    Usage: main.py [OPTIONS] COMMAND [ARGS]...
+    
+    Options:
+      --help  Show this message and exit.
+    
+    Commands:
+      off      Set off and clear all proxy config.
+      on       Run proxy flow controller.
+      version  Version
 
-```shell
-python FlowPilot-cli.py 
-```
-
-![](assets/截屏2024-04-26%2012.59.44.png)
-
-```shell
-python proxy-cli.py -h 10.2.1.0 -p 7890 -bypass-domains *.baidu.com,*.gitee.com
-```
+   ```
 
 ### TODO
 
@@ -29,7 +53,7 @@ python proxy-cli.py -h 10.2.1.0 -p 7890 -bypass-domains *.baidu.com,*.gitee.com
 * [ ] 实现从数据中心拉下来当前地址里位置对应的忽略列表, 以此实现根据地理位置确定忽略哪些地址走代理.
 * [ ] Combine with the [zerotier-cli](https://github.com/zerotier/ZeroTierOne).
 * [ ] Implementing upstream-configurable clash / agent.
-* [ ] Publish as python site-packages.
+* [x] Publish as python site-packages.
 * [ ] Release the pre-built packages for all the platform:
     * [ ] MacOSX
     * [ ] Windows
