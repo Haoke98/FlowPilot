@@ -16,7 +16,7 @@ long_description = open('README.rst').read()
 
 setup(
     name='PFlowC',
-    version='1.4.3',
+    version='1.4.4',
     url='https://github.com/Haoke98/FlowPilot',
     author='Haoke98',
     author_email='BlackHaoke<Haoke98@outlook.com>',
