@@ -1,8 +1,6 @@
 import click
 
-from utils.proxy_helper import set_web_proxy
-
-VERSION = "0.1.0"
+from PFlowC.proxy_helper.macosx import set_web_proxy, set_cmd_proxy
 
 
 @click.command

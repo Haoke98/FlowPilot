@@ -15,7 +15,7 @@ import os
 import colorlog
 
 
-def init(filename, file_level=logging.DEBUG, console_level=logging.INFO):
+def init(filename, file_level=logging.DEBUG, console_level=logging.INFO, log_dir=os.path.join("~", "logs")):
     # 控制台输出不同级别日志颜色设置
     color_config = {
         'DEBUG': 'cyan',
@@ -36,11 +36,10 @@ def init(filename, file_level=logging.DEBUG, console_level=logging.INFO):
     console_handler.setLevel(console_level)
 
     # 输出到文件
-    LOG_DIR = os.path.join(".", "logs")
-    if not os.path.exists(LOG_DIR):
-        os.makedirs(LOG_DIR)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
     n = datetime.datetime.now()
-    logFilePath = os.path.join(LOG_DIR, f"{filename}-{n.strftime('%Y%m%d%H%M')}.log")
+    logFilePath = os.path.join(log_dir, f"{filename}-{n.strftime('%Y%m%d%H%M')}.log")
     file_handler = logging.FileHandler(filename=logFilePath, mode='a', encoding='utf-8')
     file_handler.setFormatter(
         logging.Formatter(fmt='[{asctime:s}][{levelname:^7s}][{threadName:s}-{filename:s}:{lineno:d}]: {message:s}',
