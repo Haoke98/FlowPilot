@@ -38,6 +38,7 @@ else:
     try:
         bypass_domains = json.load(open(bypass_domains_fp))
         # TODO: 加载时对在PROXY规则里, 但是由于时间关系, 之前被加入到DIRECT里的域名都要提取出来
+        # TODO: 用户个人的BypassDomains列表也要进行汇入.
     except json.decoder.JSONDecodeError as e:
         logging.warning("BypassDomains缓存列表解析异常")
         bypass_domains = [
