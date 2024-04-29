@@ -65,20 +65,28 @@ class SimpleProxy(http.server.SimpleHTTPRequestHandler):
             self.send_error(502, str(e))  # Bad Gateway
 
     def handle_tunnel(self):
-        # 数据转发循环
-        while True:
-            client_data = self.rfile.readline()
-            if not client_data:
-                logging.error("[连接失败] {}".format(self.path))
-                break
-            self.connection.send(client_data)
-            logging.info("[发送数据成功] {} {}".format(self.path, client_data))
-            server_data = self.connection.recv(4096)
-            if not server_data:
-                logging.error("[目标服务器异常响应] {} [{}]".format(self.path, server_data))
-                break
-            logging.info("[获取数据成功] {} {}".format(self.path, server_data))
-            self.wfile.write(server_data)
+        BUFFER_SIZE = 4096  # 确保定义了缓冲区大小
+        try:
+            while True:
+                client_data = self.rfile.readline(BUFFER_SIZE)
+                if not client_data:
+                    break
+                self.connection.sendall(client_data)
+                logging.info("[发送数据成功] {} {}".format(self.path, client_data[:50]))
+
+                server_data = self.connection.recv(BUFFER_SIZE)
+                if not server_data:
+                    logging.error("[目标服务器关闭连接] {}".format(self.path))
+                    break
+                self.wfile.write(server_data)
+        except Exception as e:
+            logging.error("[数据转发异常] {}: {}".format(self.path, str(e)))
+            self.connection.shutdown(socket.SHUT_RDWR)  # 正确地在socket实例上调用shutdown
+            self.connection.close()
+        finally:
+            # 恢复原始的wfile和rfile
+            self.wfile = self.orig_wfile
+            self.rfile = self.orig_rfile
 
 
 if __name__ == '__main__':

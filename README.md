@@ -3,6 +3,7 @@
 A net flow pilot in order to handle some proxy configuration automatically.
 
 ### Usage
+
 1. Install
     ```shell
     pip install PFlowC -U
@@ -11,7 +12,7 @@ A net flow pilot in order to handle some proxy configuration automatically.
     ```shell
     pflow-cli on
     ```
-    ![](assets/cm_screenshot.png)
+   ![](assets/cm_screenshot.png)
     ```shell
     pflow --help
     ```
@@ -58,3 +59,11 @@ A net flow pilot in order to handle some proxy configuration automatically.
     * [ ] MacOSX
     * [ ] Windows
     * [ ] Linux
+* [ ] Use the mitmproxy implement the new Agent Client.
+  * [ ] Filter the ignored host for proxy or direct
+
+## 引用 & 鸣谢
+
+* thanks to [
+  Maximilian Hils](https://github.com/mhils), [Aldo Cortesi](https://github.com/cortesi), [Thomas Kriechbaumer](https://github.com/Kriechi),...
+  for [mitmproxy](https://github.com/mitmproxy/mitmproxy)
