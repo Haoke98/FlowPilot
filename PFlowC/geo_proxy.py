@@ -37,6 +37,7 @@ if not os.path.isfile(bypass_domains_fp):
 else:
     try:
         bypass_domains = json.load(open(bypass_domains_fp))
+        # TODO: 加载时对在PROXY规则里, 但是由于时间关系, 之前被加入到DIRECT里的域名都要提取出来
     except json.decoder.JSONDecodeError as e:
         logging.warning("BypassDomains缓存列表解析异常")
         bypass_domains = [
@@ -64,12 +65,14 @@ def request(flow: http.HTTPFlow) -> None:
         # 直接访问，不走上游代理
         print(
             f"[{flow.timestamp_start}][{flow.type}][mode:{flow.mode}][DIRECT][{ip} - {flow.request.pretty_host}][{flow.modified()}]")
-        # TODO: 更新一下bypass_domains列表
+        # 更新一下bypass_domains列表
+        # TODO: 部分特殊域名要存在于官网规则中, 对他们进行过滤单独分离出来
         if not bypass_domains.__contains__(flow.request.pretty_host):
             bypass_domains.append(flow.request.pretty_host)
             set_bypass_domains(bypass_domains)
             with open(bypass_domains_fp, "w") as bypass_domains_file:
                 json.dump(bypass_domains, bypass_domains_file, indent=4, ensure_ascii=False)
+        # TODO: 收集到中央服务方便以后成为按地区分布代理流量控制缓存.
     else:
         print(
             f"[{flow.timestamp_start}][{flow.type}][mode:{flow.mode}][PROXY][{ip} - {flow.request.pretty_host}][{flow.modified()}]")
