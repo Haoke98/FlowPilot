@@ -48,19 +48,21 @@ A net flow pilot in order to handle some proxy configuration automatically.
 * [ ] Make the command line setting configuration automatic.
     * [ ] MacOS
         * [x] .zshrc
+        * [x] .bashrc
         * [ ] auto detect the env file.
     * [ ] Windows
     * [ ] Linux
 * [ ] 实现从数据中心拉下来当前地址里位置对应的忽略列表, 以此实现根据地理位置确定忽略哪些地址走代理.
 * [ ] Combine with the [zerotier-cli](https://github.com/zerotier/ZeroTierOne).
-* [ ] Implementing upstream-configurable clash / agent.
+* [x] Implementing upstream-configurable clash / agent.
 * [x] Publish as python site-packages.
 * [ ] Release the pre-built packages for all the platform:
     * [ ] MacOSX
     * [ ] Windows
     * [ ] Linux
-* [ ] Use the mitmproxy implement the new Agent Client.
-  * [ ] Filter the ignored host for proxy or direct
+* [x] Use the mitmproxy implement the new Agent Client.
+  * [X] Auto update the bypass domains list by the geoip.
+  * [x] router the ignored host for proxy or direct real-time. 
 
 ## 引用 & 鸣谢
 

@@ -91,7 +91,7 @@ class SimpleProxy(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     logger.init("agent-service", console_level=logging.INFO)
-    port = 8380
+    port = 8480
     # 监听本地的8080端口
     with socketserver.TCPServer(("", port), SimpleProxy) as httpd:
         print("Serving at port", port)
