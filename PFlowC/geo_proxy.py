@@ -59,6 +59,7 @@ def is_local_region(ip):
 
 def request(flow: http.HTTPFlow) -> None:
     # 获取请求的目标IP地址
+    # FIXME: 这里通过域名服务获取IP地址的方法要改成从特定的DNS获取, 直接从socket获取可能会因为不同的本地环境而导致出现异常.
     ip = socket.gethostbyname(flow.request.pretty_host)
 
     # 判断是否属于本地区域
