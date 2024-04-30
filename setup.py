@@ -24,6 +24,9 @@ setup(
     description='https://github.com/Haoke98/FlowPilot/README.md',
     packages=["PFlowC", "PFlowC.utils", "PFlowC.proxy_helper"],
     install_requires=['colorlog', 'click'],
+    package_data={
+        'PFlowC.utils': ['Country.mmdb'],
+    },
     include_package_data=True,
     python_requires='>=3.7',
     long_description=long_description,
