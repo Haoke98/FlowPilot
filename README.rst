@@ -16,8 +16,8 @@ Usage ::
     ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
 
     Command line interface for Proxy Flow Controller with basic auto configurations.
-    Version: 1.4.0                    By: BlackHaoke<Haoke98@outlook.com>
-    Usage: main.py [OPTIONS] COMMAND [ARGS]...
+    Version: 1.4.4                    By: BlackHaoke<Haoke98@outlook.com>
+    Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
 
     Options:
       --help  Show this message and exit.
@@ -25,12 +25,17 @@ Usage ::
     Commands:
       off      Set off and clear all proxy config.
       on       Run proxy flow controller.
+      server   Server as the Agent service for the local device in same LAN...
       version  Version
-
 
 * Install:
 
     Run ``pip install PFlowC -U`` on the shell.
+
+* start a local flow control service:
+
+    Run ``pflow-cli server`` on the shell.
+
 
 * set on the proxy setting:
 
