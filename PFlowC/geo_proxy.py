@@ -36,7 +36,8 @@ DEFAULT_BYPASS_DOMAINS = [
 AGENT_DOMAINS = {
     "CN": [
         "github.com"
-        "api.github.com"]
+        "api.github.com"
+    ]
 }
 # 初始化GeoIP数据库
 geoip_db = geoip2.database.Reader(GEOIP_DB_PATH)
