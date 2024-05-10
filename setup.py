@@ -16,14 +16,14 @@ long_description = open('README.rst', encoding='utf-8').read()
 
 setup(
     name='PFlowC',
-    version='2.1.0',
+    version='2.1.1',
     url='https://github.com/Haoke98/FlowPilot',
     author='Haoke98',
     author_email='BlackHaoke<Haoke98@outlook.com>',
     license='MIT',
     description='https://github.com/Haoke98/FlowPilot/README.md',
     packages=["PFlowC", "PFlowC.utils", "PFlowC.proxy_helper"],
-    install_requires=['colorlog', 'click'],
+    install_requires=['colorlog', 'click', 'mitmproxy>=10.3.0', 'geoip2>=4.8.0'],
     package_data={
         'PFlowC.utils': ['Country.mmdb'],
     },
