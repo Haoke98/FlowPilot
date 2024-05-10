@@ -35,7 +35,7 @@ DEFAULT_BYPASS_DOMAINS = [
 ]
 AGENT_DOMAINS = {
     "CN": [
-        "github.com"
+        "github.com",
         "api.github.com"
     ]
 }
