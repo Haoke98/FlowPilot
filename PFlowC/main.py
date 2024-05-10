@@ -148,15 +148,15 @@ def server():
     cmd = [
         "mitmdump", "--listen-port", str(proxy_config[1]), "--mode", f"upstream:{upstream_proxy_address}",
         "-s", fp, ]
-    print("CMD:", cmd)
+    logging.debug("CMD:%s" % cmd)
     try:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        print("Server is now on!")
+        logging.info("Server is now on!")
         # 循环读取输出并打印
         for line in iter(p.stdout.readline, b''):
             print(line.decode(), end='')
     except subprocess.CalledProcessError as e:
-        print(e.stderr)
+        logging.error("CallSubprocessFailed:%s" % e.stderr)
 
 
 if __name__ == '__main__':
