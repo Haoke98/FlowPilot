@@ -14,14 +14,9 @@ import socket
 import geoip2.database
 from mitmproxy import http
 
-import importlib.resources as pkg_resources
 from PFlowC.proxy_helper import set_bypass_domains
-from PFlowC.utils.net import is_domestic2
+from PFlowC.utils.net import is_domestic2, geoip_db
 
-# GeoIP数据库文件路径
-
-GEOIP_DB_PATH = str(pkg_resources.path('PFlowC.utils', 'Country.mmdb'))
-geoip_db = geoip2.database.Reader(GEOIP_DB_PATH)
 
 # 本地区域的国家代码，例如'CN'为中国
 LOCAL_REGION_CODE = 'CN'
@@ -42,8 +37,7 @@ AGENT_DOMAINS = {
         "api.github.com"
     ]
 }
-# 初始化GeoIP数据库
-geoip_db = geoip2.database.Reader(GEOIP_DB_PATH)
+
 home_dir = os.path.expanduser("~/.PFlowC")
 bypass_domains_fp = os.path.join(home_dir, "bypass_domains.json")
 bypass_domains = set()
