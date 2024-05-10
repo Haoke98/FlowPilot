@@ -14,11 +14,14 @@ import socket
 import geoip2.database
 from mitmproxy import http
 
+import importlib.resources as pkg_resources
 from PFlowC.proxy_helper import set_bypass_domains
 from PFlowC.utils.net import is_domestic2
 
 # GeoIP数据库文件路径
-GEOIP_DB_PATH = '/Users/shadikesadamu/数据/geoip/Country.mmdb'
+
+GEOIP_DB_PATH = str(pkg_resources.path('PFlowC.utils', 'Country.mmdb'))
+geoip_db = geoip2.database.Reader(GEOIP_DB_PATH)
 
 # 本地区域的国家代码，例如'CN'为中国
 LOCAL_REGION_CODE = 'CN'

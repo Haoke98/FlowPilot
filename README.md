@@ -26,7 +26,7 @@ A net flow pilot in order to handle some proxy configuration automatically.
     ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
 
     Command line interface for Proxy Flow Controller with basic auto configurations.
-    Version: 2.1.1                    By: BlackHaoke<Haoke98@outlook.com>
+    Version: 2.2.0                    By: BlackHaoke<Haoke98@outlook.com>
     Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
 
     Options:
