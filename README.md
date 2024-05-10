@@ -63,10 +63,15 @@ A net flow pilot in order to handle some proxy configuration automatically.
     * [ ] Linux
 * [x] Use the mitmproxy implement the new Agent Client.
   * [X] Auto update the bypass domains list by the geoip.
-  * [x] router the ignored host for proxy or direct real-time. 
+  * [x] router the ignored host for proxy or direct real-time.
+* [ ] 实现流量控制通过程序内部实现而非通过系统的proxy_bypass_domains设置.
+* [ ] 利用Curses优化控制台流量展示
+* [ ] 开发GUI,Desktop应用
 
 ## 引用 & 鸣谢
 
 * thanks to [
   Maximilian Hils](https://github.com/mhils), [Aldo Cortesi](https://github.com/cortesi), [Thomas Kriechbaumer](https://github.com/Kriechi),...
   for [mitmproxy](https://github.com/mitmproxy/mitmproxy)
+* thanks for dnspython
+* thanks for geoip2
