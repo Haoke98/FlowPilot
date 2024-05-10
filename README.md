@@ -66,6 +66,8 @@ A net flow pilot in order to handle some proxy configuration automatically.
   * [x] router the ignored host for proxy or direct real-time.
 * [ ] 实现流量控制通过程序内部实现而非通过系统的proxy_bypass_domains设置.
 * [ ] 利用Curses优化控制台流量展示
+* [ ] 实现后台以服务的形式运行
+  * [ ] 开发状态栏组件
 * [ ] 开发GUI,Desktop应用
 
 ## 引用 & 鸣谢
