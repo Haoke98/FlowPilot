@@ -23,7 +23,7 @@ setup(
     license='MIT',
     description='https://github.com/Haoke98/FlowPilot/README.md',
     packages=["PFlowC", "PFlowC.utils", "PFlowC.proxy_helper"],
-    install_requires=['colorlog', 'click', 'mitmproxy>=10.3.0', 'geoip2>=4.8.0'],
+    install_requires=['colorlog', 'click', 'mitmproxy>=10.3.0', 'geoip2>=4.8.0', 'dnspython>=2.6.1'],
     package_data={
         'PFlowC.utils': ['Country.mmdb'],
     },

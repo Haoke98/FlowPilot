@@ -2,3 +2,4 @@ colorlog
 click
 mitmproxy>=10.3.0
 geoip2>=4.8.0
+dnspython>=2.6.1
