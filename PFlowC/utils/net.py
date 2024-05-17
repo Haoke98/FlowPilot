@@ -42,7 +42,7 @@ except ImportError:
             raise ImportError("无法加载资源文件 'Country.mmdb'")
 
 # 确保GEOIP_DB_PATH有有效的值后再使用
-if GEOIP_DB_PATH:
+if not GEOIP_DB_PATH:
     raise FileNotFoundError("未能找到或创建GeoIP数据库文件的路径")
 
 # 继续使用GEOIP_DB_PATH
@@ -81,6 +81,7 @@ def is_domestic(domain_name: str, max_try=10, target_country_code: str = "CN") -
 
 
 def is_domestic2(domain_name: str, max_try=10, target_country_code: str = "CN"):
+    # FIXME:区分是否是IP地址
     for i in range(max_try):
         answers = resolver.resolve(domain_name, 'A')
         for rdata in answers:

@@ -10,8 +10,8 @@ import json
 import logging
 import os
 import subprocess
+import sys
 from pathlib import Path
-
 import click
 
 from PFlowC import get_version
@@ -154,7 +154,8 @@ def server():
         logging.info("Server is now on!")
         # 循环读取输出并打印
         for line in iter(p.stdout.readline, b''):
-            print(line.decode(), end='')
+            sys.stdout.write(line.decode())
+            sys.stdout.flush()  # 刷新缓冲区以立即显示内容
     except subprocess.CalledProcessError as e:
         logging.error("CallSubprocessFailed:%s" % e.stderr)
 
