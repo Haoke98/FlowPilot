@@ -50,7 +50,7 @@ if not GEOIP_DB_PATH:
 geoip_db = geoip2.database.Reader(GEOIP_DB_PATH)
 
 # 初始化DNS解析器
-resolver = dns.resolver.Resolver()
+resolver = dns.resolver.Resolver(configure=False)
 resolver.nameservers = ['223.5.5.5', '119.29.29.29', 'https://doh.pub/dns-query',
                         'https://dns.alidns.com/dns-query']
 
