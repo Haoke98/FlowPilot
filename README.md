@@ -54,7 +54,9 @@ A net flow pilot in order to handle some proxy configuration automatically.
     * [ ] Windows
     * [ ] Linux
 * [ ] 实现从数据中心拉下来当前地址里位置对应的忽略列表, 以此实现根据地理位置确定忽略哪些地址走代理.
-* [ ] Combine with the [zerotier-cli](https://github.com/zerotier/ZeroTierOne).
+* [ ] Combine with the Intranet Penetration Tool
+  * [ ] [ZT (zerotier-cli) ](https://github.com/zerotier/ZeroTierOne).
+  * [ ] [TS (TailScale)]()
 * [x] Implementing upstream-configurable clash / agent.
 * [x] Publish as python site-packages.
 * [ ] Release the pre-built packages for all the platform:
@@ -69,6 +71,7 @@ A net flow pilot in order to handle some proxy configuration automatically.
 * [ ] 实现后台以服务的形式运行
   * [ ] 开发状态栏组件
 * [ ] 开发GUI,Desktop应用
+* [ ] 利用 [Trojan](https://github.com/trojan-gfw/trojan) 实现可跨过 [GFW](#) 的传统代理.
 
 ## 引用 & 鸣谢
 
