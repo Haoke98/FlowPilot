@@ -16,7 +16,7 @@ Usage ::
     ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
 
     Command line interface for Proxy Flow Controller with basic auto configurations.
-    Version: 2.4.0                    By: BlackHaoke<Haoke98@outlook.com>
+    Version: 2.5.0                    By: BlackHaoke<Haoke98@outlook.com>
     Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
 
     Options:

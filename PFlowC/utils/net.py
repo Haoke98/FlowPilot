@@ -6,6 +6,7 @@
 @Software: PyCharm
 @disc:
 ======================================="""
+import socket
 
 import dns.resolver
 import geoip2.database
@@ -80,17 +81,51 @@ def is_domestic(domain_name: str, max_try=10, target_country_code: str = "CN") -
     return score > 0.5
 
 
-def is_domestic2(domain_name: str, max_try=10, target_country_code: str = "CN"):
-    # FIXME:区分是否是IP地址
-    for i in range(max_try):
-        answers = resolver.resolve(domain_name, 'A')
-        for rdata in answers:
-            try:
-                response = geoip_db.country(rdata.address)
-                if response.country.iso_code == target_country_code:
+def is_domestic2(host: str, target_country_code: str = "CN", max_try=10):
+    # 区分是否是IP地址
+    if isIP(host):
+        try:
+            response = geoip_db.country(host)
+            if response.country.iso_code == target_country_code:
+                return True
+            else:
+                return False
+        except geoip2.errors.AddressNotFoundError as e:
+            print(e)
+            # 没出现在GeoIP中的要么是局域网IP, 要么是异常字符串
+            return True
+    else:
+        for i in range(max_try):
+            answers = resolver.resolve(host, 'A')
+            for rdata in answers:
+                try:
+                    response = geoip_db.country(rdata.address)
+                    if response.country.iso_code == target_country_code:
+                        pass
+                    else:
+                        return False
+                except geoip2.errors.AddressNotFoundError as e:
                     pass
-                else:
-                    return False
-            except geoip2.errors.AddressNotFoundError as e:
-                pass
-    return True
+        return True
+
+
+def isIP(input_str):
+    try:
+        # 尝试将输入解析为IP地址
+        socket.inet_aton(input_str)
+        # IP
+        return True
+    except socket.error:
+        # 如果不是有效的IP地址，则尝试解析为域名
+        try:
+            socket.gethostbyname(input_str)
+            # "域名"
+            return False
+        except socket.gaierror:
+            # 如果既不是有效的IP也不是可解析的域名，则返回未知
+            raise Exception(f"The input[{input_str}] is not a valid IP address or domain name. ")
+
+
+if __name__ == '__main__':
+    print(is_domestic2("121.4.105.111"))
+    print(is_domestic2("10.2.0.1"))

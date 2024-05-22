@@ -37,7 +37,8 @@ DOMAINS = {
     ],
     "US": [
         "github.com",
-        "api.github.com"
+        "api.github.com",
+        "collector.github.com"
     ]
 }
 
@@ -85,8 +86,8 @@ def request(flow: http.HTTPFlow) -> None:
         _type = "PROXY"
     else:
         # 直接访问，不走上游代理
-        if is_domestic2(flow.request.pretty_host, target_country_code=LOCAL_REGION_CODE):
-            _type = "PROXY =2=> DIRECT"
+        if is_domestic2(flow.request.pretty_host, LOCAL_REGION_CODE):
+            _type = "PROXY ===To===> DIRECT"
             # 需要更新一下bypass_domains列表
             # TODO: 部分特殊域名要存在于官网规则中, 对他们进行过滤单独分离出来
             bypass_domains.add(flow.request.pretty_host)
