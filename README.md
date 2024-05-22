@@ -72,6 +72,7 @@ A net flow pilot in order to handle some proxy configuration automatically.
   * [ ] 开发状态栏组件
 * [ ] 开发GUI,Desktop应用
 * [ ] 利用 [Trojan](https://github.com/trojan-gfw/trojan) 实现可跨过 [GFW](#) 的传统代理.
+  * [ ] 同时还可以借鉴 [trojan-go](https://github.com/p4gefau1t/trojan-go).
 
 ## 引用 & 鸣谢
 
