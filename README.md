@@ -10,9 +10,28 @@ A net flow pilot in order to handle some proxy configuration automatically.
     ```
 2. Run
     ```shell
-    pflow-cli on
+    pflow-cli server
     ```
    ![](assets/cm_screenshot.png)
+3. 安装证书
+   
+    否则打开任何站点都出**现证书无效**
+
+    浏览器上访问: [http://mitm.it/](http://mitm.it/)
+    ![](assets/mitm.png)
+    * Manual Installation
+      1. Double-click the P12 file to start the import wizard.
+      2. Select a certificate store location. This determines who will trust the certificate – only the current Windows user or everyone on the machine. Click Next.
+      3. Click Next again.
+      4. Leave Password blank and click Next.
+      5. Select Place all certificates in the following store, then click Browse, and select Trusted Root Certification Authorities.
+      6. Click OK and Next.
+      7. Click Finish.
+      8. Click Yes to confirm the warning dialog.
+    * Automated Installation
+      1. Run certutil.exe -addstore root mitmproxy-ca-cert.cer (details).
+
+* 其他命令可参考Help文档
     ```shell
     pflow --help
     ```
@@ -55,8 +74,8 @@ A net flow pilot in order to handle some proxy configuration automatically.
     * [ ] Linux
 * [ ] 实现从数据中心拉下来当前地址里位置对应的忽略列表, 以此实现根据地理位置确定忽略哪些地址走代理.
 * [ ] Combine with the Intranet Penetration Tool
-  * [ ] [ZT (zerotier-cli) ](https://github.com/zerotier/ZeroTierOne).
-  * [ ] [TS (TailScale)]()
+    * [ ] [ZT (zerotier-cli) ](https://github.com/zerotier/ZeroTierOne).
+    * [ ] [TS (TailScale)]()
 * [x] Implementing upstream-configurable clash / agent.
 * [x] Publish as python site-packages.
 * [ ] Release the pre-built packages for all the platform:
@@ -64,15 +83,15 @@ A net flow pilot in order to handle some proxy configuration automatically.
     * [ ] Windows
     * [ ] Linux
 * [x] Use the mitmproxy implement the new Agent Client.
-  * [X] Auto update the bypass domains list by the geoip.
-  * [x] router the ignored host for proxy or direct real-time.
+    * [X] Auto update the bypass domains list by the geoip.
+    * [x] router the ignored host for proxy or direct real-time.
 * [ ] 实现流量控制通过程序内部实现而非通过系统的proxy_bypass_domains设置.
 * [ ] 利用Curses优化控制台流量展示
 * [ ] 实现后台以服务的形式运行
-  * [ ] 开发状态栏组件
+    * [ ] 开发状态栏组件
 * [ ] 开发GUI,Desktop应用
 * [ ] 利用 [Trojan](https://github.com/trojan-gfw/trojan) 实现可跨过 [GFW](#) 的传统代理.
-  * [ ] 同时还可以借鉴 [trojan-go](https://github.com/p4gefau1t/trojan-go).
+    * [ ] 同时还可以借鉴 [trojan-go](https://github.com/p4gefau1t/trojan-go).
 
 ## 引用 & 鸣谢
 
