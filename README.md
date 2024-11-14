@@ -14,22 +14,24 @@ A net flow pilot in order to handle some proxy configuration automatically.
     ```
    ![](assets/cm_screenshot.png)
 3. 安装证书
-   
-    否则打开任何站点都出**现证书无效**
 
-    浏览器上访问: [http://mitm.it/](http://mitm.it/)
-    ![](assets/mitm.png)
+   否则打开任何站点都出**现证书无效**
+
+   浏览器上访问: [http://mitm.it/](http://mitm.it/)
+   ![](assets/mitm.png)
     * Manual Installation
-      1. Double-click the P12 file to start the import wizard.
-      2. Select a certificate store location. This determines who will trust the certificate – only the current Windows user or everyone on the machine. Click Next.
-      3. Click Next again.
-      4. Leave Password blank and click Next.
-      5. Select Place all certificates in the following store, then click Browse, and select Trusted Root Certification Authorities.
-      6. Click OK and Next.
-      7. Click Finish.
-      8. Click Yes to confirm the warning dialog.
+        1. Double-click the P12 file to start the import wizard.
+        2. Select a certificate store location. This determines who will trust the certificate – only the current
+           Windows user or everyone on the machine. Click Next.
+        3. Click Next again.
+        4. Leave Password blank and click Next.
+        5. Select Place all certificates in the following store, then click Browse, and select Trusted Root
+           Certification Authorities.
+        6. Click OK and Next.
+        7. Click Finish.
+        8. Click Yes to confirm the warning dialog.
     * Automated Installation
-      1. Run certutil.exe -addstore root mitmproxy-ca-cert.cer (details).
+        1. Run certutil.exe -addstore root mitmproxy-ca-cert.cer (details).
 
 * 其他命令可参考Help文档
     ```shell
@@ -45,7 +47,7 @@ A net flow pilot in order to handle some proxy configuration automatically.
     ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
 
     Command line interface for Proxy Flow Controller with basic auto configurations.
-    Version: 2.5.0                    By: BlackHaoke<Haoke98@outlook.com>
+    Version: 2.5.X                    By: BlackHaoke<Haoke98@outlook.com>
     Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
 
     Options:
@@ -92,6 +94,31 @@ A net flow pilot in order to handle some proxy configuration automatically.
 * [ ] 开发GUI,Desktop应用
 * [ ] 利用 [Trojan](https://github.com/trojan-gfw/trojan) 实现可跨过 [GFW](#) 的传统代理.
     * [ ] 同时还可以借鉴 [trojan-go](https://github.com/p4gefau1t/trojan-go).
+
+### 打包 & 安装 & 发布
+
+以下这些操作全都进入到项目根目录再进行
+
+1. 打包
+
+   先删除打包目录再进行打包, 这样能避免不能覆盖的问题.
+    ```shell
+   rm -rf ./build
+   rm -rf ./dist
+   python setup.py sdist bdist_wheel
+    ```
+2. 安装
+
+   本地做一次测试验证包的完整性.
+
+   (在一个环境上打包, 在另一个环境上安装最能明显的察觉到存在的问题)
+    ```shell
+    pip install ./dist/PFlowC-2.5.X.tar.gz
+    ```
+3. 发布
+    ```shell
+   twine upload ./dist/PFlowC-2.5.X.tar.gz
+    ```
 
 ## 引用 & 鸣谢
 

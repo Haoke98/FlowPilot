@@ -1,2 +1,5 @@
+from PFlowC import __version__
+
+
 def get_version():
-    return '2.5.0'
+    return __version__.__version__
