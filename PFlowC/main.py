@@ -70,10 +70,10 @@ class Config:
             json.dump(self.ctx, f, ensure_ascii=False)
 
     def get_port(self):
-        pass
+        return self.ctx["port"]
 
     def get_proxy_config(self):
-        port = self.ctx["upstream"]["port"]
+        port = self.ctx["port"]
         ignores_list = self.ctx["bypass_domains"]
         bypass_domains = list(set(ignores_list))
         return "127.0.0.1", port, bypass_domains
