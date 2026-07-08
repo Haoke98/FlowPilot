@@ -1,12 +1,14 @@
 FlowPilot ~ PFC ~ Proxy Flow Control
 ========================================================
 
-ProxyFlow Control
-------------------------------
+A smart proxy router that automatically routes domestic traffic directly
+and foreign traffic through an upstream proxy — all decided by GeoIP at
+the TCP CONNECT level. Pure Python asyncio, no mitmproxy dependency.
 
-A net flow pilot in order to handle some proxy configuration automatically.
+Usage
+-----
 
-Usage ::
+::
 
     ██████╗ ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗
     ██╔══██╗██╔════╝██║     ██╔═══██╗██║    ██║██╔════╝
@@ -15,36 +17,64 @@ Usage ::
     ██║     ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╗
     ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
 
-    Command line interface for Proxy Flow Controller with basic auto configurations.
-    Version: 2.5.X                    By: BlackHaoke<Haoke98@outlook.com>
     Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
 
-    Options:
-      --help  Show this message and exit.
-
     Commands:
-      off      Set off and clear all proxy config.
-      on       Run proxy flow controller.
-      server   Server as the Agent service for the local device in same LAN...
-      version  Version
+      server    Start the smart proxy router (GeoIP-based)
+      on        Set macOS system proxy + shell env + git proxy
+      off       Clear all proxy settings
+      version   Show version
 
-* Install:
+Install
+-------
 
-    Run ``pip install PFlowC -U`` on the shell.
+``pip install PFlowC -U``
 
-* start a local flow control service:
+Configure
+---------
 
-    Run ``pflow-cli server`` on the shell.
+Create ``~/.PFlowC/config.json``::
 
+    {
+      "port": 7891,
+      "upstream": {"host": "192.168.76.145", "port": "7890"},
+      "bypass_domains": ["127.0.0.1", "192.168.0.0/16", "172.16.0.0/16", "10.0.0.0/8"]
+    }
 
-* set on the proxy setting:
+Run
+---
 
-    Run ``pflow-cli on`` on the shell.
+Start the router::
 
-* set off the proxy setting:
+    pflow-cli server
 
-    Run ``pflow-cli off`` on the shell.
+Set system proxy::
 
-* Ask for Help:
+    pflow-cli on
 
-    Run ``pflow-cli --help`` on the shell.
+Clear all proxy settings::
+
+    pflow-cli off
+
+How It Works
+------------
+
+A lightweight async CONNECT proxy listens on the configured port. For
+each connection:
+
+- GeoIP lookup determines if the target is domestic (China) or foreign.
+- **Domestic**: TCP connects directly with zero latency overhead.
+- **Foreign**: TCP connects to the upstream proxy, sends CONNECT, relays.
+- Results are cached in memory for instant repeat lookups.
+
+Release
+-------
+
+Push a ``v*`` tag to trigger GitHub Actions → PyPI + GitHub Release::
+
+    git tag v3.0.0 && git push origin v3.0.0
+
+License
+-------
+
+MIT · Copyright Sadam·Sadik

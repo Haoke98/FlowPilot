@@ -9,9 +9,6 @@
 import json
 import logging
 import os
-import subprocess
-import sys
-from pathlib import Path
 import click
 
 from PFlowC import get_version
@@ -107,36 +104,9 @@ def off():
 
 @main.command(help="Server as the Agent service for the local device in same LAN networks.")
 def server():
-    config = Config()
-    proxy_config = config.get_proxy_config()
-    set_all_proxy(*proxy_config)
-    upstream_proxy_address = config.get_upstream_proxy_address()
-    fp = os.path.join(Path(__file__).parent, "geo_proxy.py")
-    cmd = [
-        "mitmdump", "--listen-port", str(proxy_config[1]), "--mode", f"upstream:{upstream_proxy_address}",
-        "-s", fp,
-    ]
-    logging.debug("CMD:%s" % cmd)
-    try:
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        logging.info("Server is now on!")
-        # 循环读取输出并打印，使用更健壮的解码方式
-        for line in iter(p.stdout.readline, b''):
-            try:
-                # 首先尝试 UTF-8
-                decoded_line = line.decode('utf-8')
-            except UnicodeDecodeError:
-                try:
-                    # 如果 UTF-8 失败，尝试系统默认编码
-                    decoded_line = line.decode('cp936')
-                except UnicodeDecodeError:
-                    # 如果还是失败，使用 'replace' 错误处理器
-                    decoded_line = line.decode('utf-8', errors='replace')
-            
-            sys.stdout.write(decoded_line)
-            sys.stdout.flush()
-    except subprocess.CalledProcessError as e:
-        logging.error("CallSubprocessFailed:%s" % e.stderr)
+    from PFlowC.router import start
+    logging.info("Server is now on!")
+    start()
 
 
 if __name__ == '__main__':

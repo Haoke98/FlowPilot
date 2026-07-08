@@ -1,129 +1,158 @@
 # FlowPilot
 
-A net flow pilot in order to handle some proxy configuration automatically.
+A smart proxy router that automatically routes domestic traffic directly and foreign traffic through an upstream proxy — all decided by GeoIP at the TCP CONNECT level.
 
-### Usage
+**No more growing bypass_domains lists. No mitmproxy dependency. Just pure Python asyncio.**
 
-1. Install
-    ```shell
-    pip install PFlowC -U
-    ```
-2. Run
-    ```shell
-    pflow-cli server
-    ```
-   ![](assets/cm_screenshot.png)
-3. 安装证书
+## How It Works
 
-   否则打开任何站点都出**现证书无效**
+```
+Client (browser/curl)
+    │  proxy → 127.0.0.1:7891
+    ▼
+┌─────────────────────────────────┐
+│         FlowPilot Router        │
+│   (async CONNECT proxy, ~150 LOC)│
+│                                 │
+│   _is_domestic(host)?           │
+│   ├── YES → DIRECT to target    │
+│   └── NO  → CONNECT to upstream │
+│             (192.168.76.x:7890) │
+└─────────────────────────────────┘
+```
 
-   浏览器上访问: [http://mitm.it/](http://mitm.it/)
-   ![](assets/mitm.png)
-    * Manual Installation
-        1. Double-click the P12 file to start the import wizard.
-        2. Select a certificate store location. This determines who will trust the certificate – only the current
-           Windows user or everyone on the machine. Click Next.
-        3. Click Next again.
-        4. Leave Password blank and click Next.
-        5. Select Place all certificates in the following store, then click Browse, and select Trusted Root
-           Certification Authorities.
-        6. Click OK and Next.
-        7. Click Finish.
-        8. Click Yes to confirm the warning dialog.
-    * Automated Installation
-        1. Run certutil.exe -addstore root mitmproxy-ca-cert.cer (details).
+- **Domestic** (China): TCP connects directly to the target server, zero latency overhead.
+- **Foreign**: TCP connects to the configured upstream proxy, sends `CONNECT target:443`, relays traffic.
+- Routing decisions are cached in memory for instant lookups on repeated requests.
 
-* 其他命令可参考Help文档
-    ```shell
-    pflow --help
-    ```
-   ```
+## Quick Start
 
-    ██████╗ ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗
-    ██╔══██╗██╔════╝██║     ██╔═══██╗██║    ██║██╔════╝
-    ██████╔╝█████╗  ██║     ██║   ██║██║ █╗ ██║██║
-    ██╔═══╝ ██╔══╝  ██║     ██║   ██║██║███╗██║██║
-    ██║     ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╗
-    ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
+```bash
+# 1. Install
+pip install PFlowC -U
 
-    Command line interface for Proxy Flow Controller with basic auto configurations.
-    Version: 2.5.X                    By: BlackHaoke<Haoke98@outlook.com>
-    Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
+# 2. Configure upstream proxy
+mkdir -p ~/.PFlowC
+cat > ~/.PFlowC/config.json << 'EOF'
+{
+  "port": 7891,
+  "upstream": {"host": "192.168.76.145", "port": "7890"},
+  "bypass_domains": ["127.0.0.1", "192.168.0.0/16", "172.16.0.0/16", "10.0.0.0/8"]
+}
+EOF
 
-    Options:
-      --help  Show this message and exit.
+# 3. Start the router
+pflow-cli server
 
-    Commands:
-      off      Set off and clear all proxy config.
-      on       Run proxy flow controller.
-      server   Server as the Agent service for the local device in same LAN...
-      version  Version
+# 4. Set system proxy (separate terminal, or use pflow-cli on)
+pflow-cli on
+```
 
-   ```
+## Commands
 
-### TODO
+```
+Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
 
-* [ ] Make system proxy setting configuration automatic.
-    * [x] MacOS
-    * [ ] Windows
-    * [ ] Linux
-* [ ] Make the command line setting configuration automatic.
-    * [ ] MacOS
-        * [x] .zshrc
-        * [x] .bashrc
-        * [ ] auto detect the env file.
-    * [ ] Windows
-    * [ ] Linux
-* [ ] 实现从数据中心拉下来当前地址里位置对应的忽略列表, 以此实现根据地理位置确定忽略哪些地址走代理.
-* [ ] Combine with the Intranet Penetration Tool
-    * [ ] [ZT (zerotier-cli) ](https://github.com/zerotier/ZeroTierOne).
-    * [ ] [TS (TailScale)]()
-* [x] Implementing upstream-configurable clash / agent.
-* [x] Publish as python site-packages.
-* [ ] Release the pre-built packages for all the platform:
-    * [ ] MacOSX
-    * [ ] Windows
-    * [ ] Linux
-* [x] Use the mitmproxy implement the new Agent Client.
-    * [X] Auto update the bypass domains list by the geoip.
-    * [x] router the ignored host for proxy or direct real-time.
-* [ ] 实现流量控制通过程序内部实现而非通过系统的proxy_bypass_domains设置.
-* [ ] 利用Curses优化控制台流量展示
-* [ ] 实现后台以服务的形式运行
-    * [ ] 开发状态栏组件
-* [ ] 开发GUI,Desktop应用
-* [ ] 利用 [Trojan](https://github.com/trojan-gfw/trojan) 实现可跨过 [GFW](#) 的传统代理.
-    * [ ] 同时还可以借鉴 [trojan-go](https://github.com/p4gefau1t/trojan-go).
+  ██████╗ ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗
+  ██╔══██╗██╔════╝██║     ██╔═══██╗██║    ██║██╔════╝
+  ██████╔╝█████╗  ██║     ██║   ██║██║ █╗ ██║██║
+  ██╔═══╝ ██╔══╝  ██║     ██║   ██║██║███╗██║██║
+  ██║     ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╗
+  ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
 
-### 打包 & 安装 & 发布
+Commands:
+  server    Start the smart proxy router (GeoIP-based)
+  on        Set macOS system proxy + shell env + git proxy
+  off       Clear all proxy settings
+  version   Show version
+```
 
-以下这些操作全都进入到项目根目录再进行
+## Configuration
 
-1. 打包
+`~/.PFlowC/config.json`:
 
-   先删除打包目录再进行打包, 这样能避免不能覆盖的问题.
-    ```shell
-   rm -rf ./build
-   rm -rf ./dist
-   python setup.py sdist bdist_wheel
-    ```
-2. 安装
+| Field | Description | Example |
+|-------|-------------|---------|
+| `port` | Local listen port | `7891` |
+| `upstream.host` | Upstream proxy host | `"192.168.76.145"` |
+| `upstream.port` | Upstream proxy port | `"7890"` |
+| `bypass_domains` | System-level bypass (LAN/local only) | `["127.0.0.1", "192.168.0.0/16"]` |
 
-   本地做一次测试验证包的完整性.
+## 打包 & 安装 & 发布
 
-   (在一个环境上打包, 在另一个环境上安装最能明显的察觉到存在的问题)
-    ```shell
-    pip install ./dist/PFlowC-2.5.X.tar.gz
-    ```
-3. 发布
-    ```shell
-   twine upload ./dist/PFlowC-2.5.X.tar.gz
-    ```
+以下操作均在项目根目录进行。
 
-## 引用 & 鸣谢
+**1. 打包**
 
-* thanks to [
-  Maximilian Hils](https://github.com/mhils), [Aldo Cortesi](https://github.com/cortesi), [Thomas Kriechbaumer](https://github.com/Kriechi),...
-  for [mitmproxy](https://github.com/mitmproxy/mitmproxy)
-* thanks for dnspython
-* thanks for geoip2
+先清旧再打包，避免覆盖冲突：
+
+```bash
+rm -rf ./build ./dist
+python setup.py sdist bdist_wheel
+```
+
+**2. 安装（本地验证）**
+
+```bash
+pip install ./dist/PFlowC-3.0.0.tar.gz
+```
+
+**3. 发布**
+
+推送 `v*` tag 会自动触发 GitHub Actions 发布到 PyPI 并创建 GitHub Release：
+
+```bash
+git tag v3.0.0 && git push origin v3.0.0
+```
+
+或手动发布：
+
+```bash
+twine upload ./dist/PFlowC-3.0.0.tar.gz
+```
+
+## TODO
+
+- [ ] 完善多平台系统代理自动配置
+    - [x] macOS
+    - [ ] Windows
+    - [ ] Linux
+- [ ] 完善多平台命令行代理自动配置
+    - [x] macOS (.zshrc / .bashrc)
+    - [ ] 自动检测 shell 配置文件
+    - [ ] Windows
+    - [ ] Linux
+- [x] 上游代理可配置
+- [x] 发布为 Python site-packages
+- [x] 使用 GeoIP 实现智能路由（国内直连 / 境外代理）
+- [x] 在程序内部实现流量分流（不再依赖系统 bypass_domains）
+- [x] 自动配置 Git 全局代理
+- [x] CI/CD：GitHub Actions 自动发布到 PyPI + GitHub Release
+- [ ] 发布各平台预编译包 (macOS / Windows / Linux)
+- [ ] 利用 Curses 优化控制台流量展示
+- [ ] 后台服务模式 + 状态栏组件
+- [ ] GUI 桌面应用
+- [ ] 利用 Trojan 实现可跨 GFW 的传统代理
+    - [ ] 参考 [trojan-go](https://github.com/p4gefau1t/trojan-go)
+- [ ] 与内网穿透工具集成
+    - [ ] [ZeroTier](https://github.com/zerotier/ZeroTierOne)
+    - [ ] [Tailscale](https://tailscale.com)
+- [ ] 从数据中心按地理位置拉取忽略列表
+
+## Contributing
+
+欢迎参与！无论是 Bug 反馈、功能建议还是代码贡献，都欢迎提 [Issue](https://github.com/Haoke98/FlowPilot/issues) 或 PR。
+
+如果你有这些方面的经验，特别欢迎：
+- Windows / Linux 平台的系统代理配置
+- Curses TUI 开发
+- 跨平台 GUI (Electron / Tauri)
+
+## License
+
+MIT · Copyright Sadam·Sadik
+
+## Acknowledgments
+
+- [geoip2](https://github.com/maxmind/GeoIP2-python) for IP geolocation
+- [dnspython](https://www.dnspython.org/) for DNS utilities
