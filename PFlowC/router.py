@@ -454,6 +454,8 @@ def start(listen_port=None, mode=None, upstreams=None,
 
     # Debug 模式
     DEBUG = debug
+    if DEBUG:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     async def _serve():
         server = await asyncio.start_server(_handle, LISTEN_HOST, LISTEN_PORT)
