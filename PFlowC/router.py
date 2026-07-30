@@ -262,12 +262,17 @@ async def _handle(reader, writer):
             if l in (b'\r\n', b'\n', b''):
                 break
             header_line = l.decode('utf-8', errors='replace').strip()
+            if DEBUG:
+                logging.debug("[REQ] {}".format(header_line))
             if header_line.lower().startswith('proxy-authorization:'):
                 proxy_auth = header_line.split(':', 1)[1].strip()
 
         # ── 鉴权检查 ─────────────────────────────────────
-        if DEBUG and proxy_auth:
-            logging.debug("[AUTH] 收到鉴权头: {}...".format(proxy_auth[:50]))
+        if DEBUG:
+            if proxy_auth:
+                logging.debug("[AUTH] 收到鉴权头: {}...".format(proxy_auth[:50]))
+            else:
+                logging.debug("[AUTH] ⚠ 未收到任何鉴权头（proxy_auth为空）")
         if AUTH_ENABLED and not _check_auth(proxy_auth):
             writer.write(b'HTTP/1.1 407 Proxy Authentication Required\r\n'
                          b'Proxy-Authenticate: Basic realm="PFlowC"\r\n\r\n')
