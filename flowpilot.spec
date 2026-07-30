@@ -12,7 +12,6 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['pathlib'],
     noarchive=False,
     optimize=0,
 )
