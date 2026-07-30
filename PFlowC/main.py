@@ -9,6 +9,8 @@
 import json
 import logging
 import os
+import sys
+
 import click
 
 from PFlowC import get_version
@@ -117,6 +119,49 @@ class Config:
 
 
 config = Config()
+
+
+# ═══════════════════════════════════════════════════════════
+#  后台守护
+# ═══════════════════════════════════════════════════════════
+
+def _daemonize():
+    """Fork 到后台运行，脱离终端"""
+    # 第一次 fork
+    pid = os.fork()
+    if pid > 0:
+        print(f"PFlowC 已转入后台运行 (PID: {pid})")
+        sys.exit(0)
+    # 子进程
+    os.setsid()
+    # 第二次 fork
+    pid = os.fork()
+    if pid > 0:
+        sys.exit(0)
+    # 重定向标准流
+    log_file = os.path.join(home_dir, "logs", "daemon.log")
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    fd = os.open(log_file, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    os.dup2(fd, sys.stdin.fileno())
+    os.dup2(fd, sys.stdout.fileno())
+    os.dup2(fd, sys.stderr.fileno())
+    os.close(fd)
+
+
+SYSTEMD_SERVICE_TEMPLATE = """[Unit]
+Description=FlowPilot Proxy Router
+After=network.target
+
+[Service]
+Type=simple
+ExecStart={python} -m PFlowC.main server {extra_args}
+Restart=always
+RestartSec=5
+User={user}
+
+[Install]
+WantedBy=multi-user.target
+"""
 
 
 # ═══════════════════════════════════════════════════════════
@@ -243,8 +288,11 @@ def show_config():
 @click.option("--strategy", "-s", type=click.Choice(["round_robin", "random", "lowest_latency", "geoip_preferred"]),
               help="路由策略（仅 smart 模式）")
 @click.option("--debug", "-d", is_flag=True, help="开启 Debug 模式，输出鉴权参数")
-def server(port, mode, strategy, debug):
+@click.option("--daemon", is_flag=True, help="后台守护进程模式（fork 到后台）")
+def server(port, mode, strategy, debug, daemon):
     """启动路由代理"""
+    if daemon:
+        _daemonize()
     from PFlowC.router import start
     logging.info("启动 FlowPilot v4.0 ...")
     start(
@@ -255,6 +303,44 @@ def server(port, mode, strategy, debug):
         auth_config=config.get_auth(),
         debug=debug,
     )
+
+
+@main.command(help="生成 systemd 服务文件，实现开机自启")
+@click.option("--mode", "-m", default=None, help="运行模式")
+@click.option("--port", "-p", default=None, type=int, help="监听端口")
+def install_service(mode, port):
+    """生成并提示安装 systemd 服务"""
+    import getpass
+    python = sys.executable
+    extra = ""
+    m = mode or config.get_mode()
+    p = port or config.get_port()
+    if m:
+        extra += f" --mode {m}"
+    if p:
+        extra += f" --port {p}"
+    user = getpass.getuser()
+
+    content = SYSTEMD_SERVICE_TEMPLATE.format(
+        python=python, extra_args=extra, user=user
+    )
+    service_path = "/etc/systemd/system/pflowc.service"
+
+    click.secho("═══ systemd 服务配置 ═══", fg='cyan', bold=True)
+    click.echo()
+    click.echo(content)
+    click.echo()
+    click.secho("安装方法:", fg='yellow')
+    click.echo(f"  sudo tee {service_path} << 'EOF'")
+    click.echo(content)
+    click.echo("EOF")
+    click.echo(f"  sudo systemctl daemon-reload")
+    click.echo(f"  sudo systemctl enable --now pflowc")
+    click.echo()
+    click.echo("管理命令:")
+    click.echo("  sudo systemctl status pflowc")
+    click.echo("  sudo systemctl restart pflowc")
+    click.echo("  sudo journalctl -u pflowc -f")
 
 
 @main.command(help="Run proxy flow controller.")
