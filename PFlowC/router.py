@@ -60,6 +60,9 @@ AUTH_PASSWORD = ""
 AUTH_TOKENS = []  # 备用: 多token支持
 AUTH_CHECKER = None  # 自定义鉴权回调: callable(username, password) -> bool
 
+# Debug 模式
+DEBUG = False
+
 # 路由计数器（轮询用）
 _round_robin_counter = 0
 _upstream_latency = {}  # {upstream_key: avg_latency_ms}
@@ -107,17 +110,32 @@ def _check_auth(auth_header: str) -> bool:
         return True
 
     if not auth_header:
+        if DEBUG:
+            logging.debug("[AUTH] 未收到鉴权头")
         return False
 
     # Token 鉴权: Proxy-Authorization: Bearer <token>
     if auth_header.startswith("Bearer "):
         token = auth_header[7:]
+        if DEBUG:
+            logging.debug("[AUTH] Bearer token (len={}, prefix={}...)".format(
+                len(token), token[:8] if len(token) >= 8 else token))
+            logging.debug("[AUTH] AUTH_CHECKER={}, tokens_count={}".format(
+                AUTH_CHECKER is not None, len(AUTH_TOKENS)))
         if AUTH_CHECKER:
-            return AUTH_CHECKER(token, "")
+            result = AUTH_CHECKER(token, "")
+            if DEBUG:
+                logging.debug("[AUTH] checker result: {}".format(result))
+            return result
         if AUTH_TOKENS and token in AUTH_TOKENS:
+            if DEBUG:
+                logging.debug("[AUTH] token matched in tokens list")
             return True
         if AUTH_PASSWORD and token == AUTH_PASSWORD:
             return True
+        if DEBUG:
+            logging.debug("[AUTH] token NOT matched (tokens={})".format(
+                [t[:8]+"..." if len(t)>8 else t for t in AUTH_TOKENS]))
         return False
 
     # Basic 鉴权: Proxy-Authorization: Basic <base64>
@@ -125,12 +143,26 @@ def _check_auth(auth_header: str) -> bool:
         try:
             decoded = base64.b64decode(auth_header[6:]).decode('utf-8')
             username, _, password = decoded.partition(':')
+            if DEBUG:
+                logging.debug("[AUTH] Basic: user={} pass_len={}".format(
+                    username, len(password)))
             if AUTH_CHECKER:
-                return AUTH_CHECKER(username, password)
-            return username == AUTH_USERNAME and password == AUTH_PASSWORD
-        except Exception:
+                result = AUTH_CHECKER(username, password)
+                if DEBUG:
+                    logging.debug("[AUTH] checker result: {}".format(result))
+                return result
+            ok = username == AUTH_USERNAME and password == AUTH_PASSWORD
+            if DEBUG and not ok:
+                logging.debug("[AUTH] Basic mismatch: got {}/{} vs config {}/{}".format(
+                    username, "*"*len(password), AUTH_USERNAME, "*"*len(AUTH_PASSWORD)))
+            return ok
+        except Exception as e:
+            if DEBUG:
+                logging.debug("[AUTH] Basic decode failed: {}".format(e))
             return False
 
+    if DEBUG:
+        logging.debug("[AUTH] unknown auth type: {}".format(auth_header[:20]))
     return False
 
 
@@ -234,6 +266,8 @@ async def _handle(reader, writer):
                 proxy_auth = header_line.split(':', 1)[1].strip()
 
         # ── 鉴权检查 ─────────────────────────────────────
+        if DEBUG and proxy_auth:
+            logging.debug("[AUTH] 收到鉴权头: {}...".format(proxy_auth[:50]))
         if AUTH_ENABLED and not _check_auth(proxy_auth):
             writer.write(b'HTTP/1.1 407 Proxy Authentication Required\r\n'
                          b'Proxy-Authenticate: Basic realm="PFlowC"\r\n\r\n')
@@ -291,10 +325,15 @@ async def _handle(reader, writer):
 
                     if auth_type == "token" and u_token:
                         upstream_req += "Proxy-Authorization: Bearer {}\r\n".format(u_token)
+                        if DEBUG:
+                            logging.debug("[UPSTREAM-AUTH] Bearer token(len={}) → {}:{}".format(
+                                len(u_token), u_host, u_port))
                     elif u_user or u_pass:
                         auth_b64 = base64.b64encode(
                             "{}:{}".format(u_user or "", u_pass or "").encode()).decode()
                         upstream_req += "Proxy-Authorization: Basic {}\r\n".format(auth_b64)
+                        if DEBUG:
+                            logging.debug("[UPSTREAM-AUTH] Basic auth → {}:{}".format(u_host, u_port))
 
                     upstream_req += "\r\n"
                     remote_writer.write(upstream_req.encode())
@@ -338,7 +377,7 @@ async def _handle(reader, writer):
 # ═══════════════════════════════════════════════════════════
 
 def start(listen_port=None, mode=None, upstreams=None,
-          strategy=None, auth_config=None):
+          strategy=None, auth_config=None, debug=False):
     """启动路由代理（阻塞）
 
     Args:
@@ -347,9 +386,11 @@ def start(listen_port=None, mode=None, upstreams=None,
         upstreams: 上游代理列表 [{host, port, ...}]
         strategy: 路由策略 "round_robin" | "random" | "lowest_latency" | "geoip_preferred"
         auth_config: {"enabled": bool, "username": "", "password": "", "tokens": []}
+        debug: 开启 debug 模式，输出鉴权参数等调试信息
     """
     global LISTEN_PORT, MODE, UPSTREAMS, ROUTING_STRATEGY
     global AUTH_ENABLED, AUTH_USERNAME, AUTH_PASSWORD, AUTH_TOKENS
+    global DEBUG
 
     # 从配置文件读取
     config_fp = os.path.join(home_dir, "config.json")
@@ -411,6 +452,9 @@ def start(listen_port=None, mode=None, upstreams=None,
         AUTH_PASSWORD = auth_config.get("password", AUTH_PASSWORD)
         AUTH_TOKENS = auth_config.get("tokens", AUTH_TOKENS)
 
+    # Debug 模式
+    DEBUG = debug
+
     async def _serve():
         server = await asyncio.start_server(_handle, LISTEN_HOST, LISTEN_PORT)
         addr = server.sockets[0].getsockname()
@@ -428,6 +472,8 @@ def start(listen_port=None, mode=None, upstreams=None,
             logging.info("  ⚡ 全局直连模式 — 所有流量不走上游代理")
         if AUTH_ENABLED:
             logging.info("  🔒 鉴权已启用")
+        if DEBUG:
+            logging.info("  🐛 Debug 模式已开启")
         async with server:
             await server.serve_forever()
 

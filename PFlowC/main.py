@@ -242,7 +242,8 @@ def show_config():
 @click.option("--mode", "-m", type=click.Choice(["smart", "direct"]), help="运行模式")
 @click.option("--strategy", "-s", type=click.Choice(["round_robin", "random", "lowest_latency", "geoip_preferred"]),
               help="路由策略（仅 smart 模式）")
-def server(port, mode, strategy):
+@click.option("--debug", "-d", is_flag=True, help="开启 Debug 模式，输出鉴权参数")
+def server(port, mode, strategy, debug):
     """启动路由代理"""
     from PFlowC.router import start
     logging.info("启动 FlowPilot v4.0 ...")
@@ -252,6 +253,7 @@ def server(port, mode, strategy):
         upstreams=config.get_upstreams(),
         strategy=strategy or config.get_strategy(),
         auth_config=config.get_auth(),
+        debug=debug,
     )
 
 
