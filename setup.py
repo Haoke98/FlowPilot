@@ -1,8 +1,8 @@
-# _*_ codign:utf8 _*_
+# _*_ coding:utf8 _*_
 """====================================
 @Author:Sadam·Sadik
 @Email：1903249375@qq.com
-@Date：2024/4/28
+@Date：2024/7/30
 @Software: PyCharm
 @disc:
 ======================================="""
@@ -12,42 +12,46 @@ try:
 except ImportError:
     from distutils.core import setup
 
-from PFlowC import __version__
+from PFlowC.__version__ import (
+    __version__, __url__, __author__, __author_email__,
+    __license__, __description__,
+)
 
-long_description = open('README.rst', encoding='utf-8').read()
+long_description = open('README.md', encoding='utf-8').read()
 
 setup(
     name='PFlowC',
-    version=__version__.__version__,
-    url=__version__.__url__,
-    author=__version__.__author__,
-    author_email=__version__.__author_email__,
-    license=__version__.__license__,
-    description=__version__.__description__,
+    version=__version__,
+    url=__url__,
+    author=__author__,
+    author_email=__author_email__,
+    license=__license__,
+    description=__description__,
     packages=["PFlowC", "PFlowC.utils", "PFlowC.proxy_helper"],
-    install_requires=['colorlog', 'click', 'geoip2>=4.8.0', 'dnspython>=2.6.1'],
+    install_requires=['click', 'colorlog', 'geoip2>=4.8.0', 'dnspython>=2.6.1',
+                      'python-dotenv>=1.0.0'],
     package_data={
         'PFlowC.utils': ['Country.mmdb'],
     },
     include_package_data=True,
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
-        "Intended Audience :: Education",
-        "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
-        "Natural Language :: English",
         "Operating System :: OS Independent",
-        "Topic :: Scientific/Engineering :: Visualization",
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        "Topic :: Internet :: Proxy Servers",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
-    keywords="proxy flow control",
+    keywords="proxy flow control geoip routing",
     entry_points={
         'console_scripts': [
             'pflow-cli=PFlowC.main:main',

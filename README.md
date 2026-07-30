@@ -1,158 +1,193 @@
 # FlowPilot
 
-A smart proxy router that automatically routes domestic traffic directly and foreign traffic through an upstream proxy — all decided by GeoIP at the TCP CONNECT level.
+**智能代理路由器** — 纯 Python asyncio CONNECT 代理。支持 GeoIP 智能分流、多上游代理池、全局直连模式、Token/Basic 鉴权。
 
-**No more growing bypass_domains lists. No mitmproxy dependency. Just pure Python asyncio.**
+> **v4.0** 新增：全局直连模式 · 多上游代理 + 路由策略 · 鉴权 (Basic/Token) · 交互式配置向导
 
-## How It Works
+## 架构
 
 ```
 Client (browser/curl)
-    │  proxy → 127.0.0.1:7891
+    │  CONNECT → 127.0.0.1:7890
     ▼
-┌─────────────────────────────────┐
-│         FlowPilot Router        │
-│   (async CONNECT proxy, ~150 LOC)│
-│                                 │
-│   _is_domestic(host)?           │
-│   ├── YES → DIRECT to target    │
-│   └── NO  → CONNECT to upstream │
-│             (192.168.76.x:7890) │
-└─────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│              FlowPilot Router v4.0                │
+│         (async CONNECT proxy, ~400 LOC)           │
+│                                                   │
+│   ┌─ mode: direct ──────────────────────────────┐ │
+│   │  → DIRECT to target (边缘节点模式)            │ │
+│   └─────────────────────────────────────────────┘ │
+│   ┌─ mode: smart ───────────────────────────────┐ │
+│   │  _is_domestic(host)?                         │ │
+│   │  ├── YES → DIRECT to target                  │ │
+│   │  └── NO  → _pick_upstream(strategy)          │ │
+│   │           → CONNECT through best upstream    │ │
+│   └─────────────────────────────────────────────┘ │
+│                                                   │
+│   🔒 鉴权: Basic Auth / Bearer Token              │
+└──────────────────────────────────────────────────┘
 ```
 
-- **Domestic** (China): TCP connects directly to the target server, zero latency overhead.
-- **Foreign**: TCP connects to the configured upstream proxy, sends `CONNECT target:443`, relays traffic.
-- Routing decisions are cached in memory for instant lookups on repeated requests.
-
-## Quick Start
+## 快速开始
 
 ```bash
-# 1. Install
+# 1. 安装
 pip install PFlowC -U
 
-# 2. Configure upstream proxy
-mkdir -p ~/.PFlowC
-cat > ~/.PFlowC/config.json << 'EOF'
-{
-  "port": 7891,
-  "upstream": {"host": "192.168.76.145", "port": "7890"},
-  "bypass_domains": ["127.0.0.1", "192.168.0.0/16", "172.16.0.0/16", "10.0.0.0/8"]
-}
-EOF
+# 2. 交互式配置
+pflow-cli setup
 
-# 3. Start the router
+# 3. 启动
 pflow-cli server
 
-# 4. Set system proxy (separate terminal, or use pflow-cli on)
-pflow-cli on
+# 4. 使用代理
+curl -x http://proxy-user:proxy-pass@127.0.0.1:7890 https://ipinfo.io
 ```
 
-## Commands
+## 命令
 
-```
-Usage: pflow-cli [OPTIONS] COMMAND [ARGS]...
-
-  ██████╗ ███████╗██╗      ██████╗ ██╗    ██╗ ██████╗
-  ██╔══██╗██╔════╝██║     ██╔═══██╗██║    ██║██╔════╝
-  ██████╔╝█████╗  ██║     ██║   ██║██║ █╗ ██║██║
-  ██╔═══╝ ██╔══╝  ██║     ██║   ██║██║███╗██║██║
-  ██║     ██║     ███████╗╚██████╔╝╚███╔███╔╝╚██████╗
-  ╚═╝     ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝  ╚═════╝
-
-Commands:
-  server    Start the smart proxy router (GeoIP-based)
-  on        Set macOS system proxy + shell env + git proxy
-  off       Clear all proxy settings
-  version   Show version
+```bash
+pflow-cli setup        # 交互式配置向导（v4.0 新增）
+pflow-cli show-config  # 查看当前配置（v4.0 新增）
+pflow-cli server       # 启动代理路由服务
+pflow-cli on           # 设置系统代理 (macOS)
+pflow-cli off          # 清除所有代理设置
+pflow-cli version      # 显示版本
 ```
 
-## Configuration
+**server 选项：**
+```bash
+pflow-cli server --port 7890 --mode direct
+pflow-cli server --mode smart --strategy round_robin
+```
 
-`~/.PFlowC/config.json`:
+## 配置
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| `port` | Local listen port | `7891` |
-| `upstream.host` | Upstream proxy host | `"192.168.76.145"` |
-| `upstream.port` | Upstream proxy port | `"7890"` |
-| `bypass_domains` | System-level bypass (LAN/local only) | `["127.0.0.1", "192.168.0.0/16"]` |
+`~/.PFlowC/config.json`：
+
+| 字段 | 类型 | 说明 | 示例 |
+|------|------|------|------|
+| `port` | int | 监听端口 | `7890` |
+| `mode` | string | 运行模式：`smart`(GeoIP分流) / `direct`(全局直连) | `"smart"` |
+| `routing_strategy` | string | 路由策略 (仅smart)：`round_robin` / `random` / `lowest_latency` / `geoip_preferred` | `"round_robin"` |
+| `upstreams` | array | 上游代理列表 | 见下方 |
+| `auth.enabled` | bool | 是否启用鉴权 | `true` |
+| `auth.username` | string | Basic Auth 用户名 | `"proxy"` |
+| `auth.password` | string | Basic Auth 密码 | `"secret"` |
+| `auth.tokens` | array | Token 列表 | `["token1"]` |
+| `bypass_domains` | array | 系统级代理绕过 | `["127.0.0.1"]` |
+
+### 上游代理 (upstreams)
+
+```json
+{
+  "upstreams": [
+    {
+      "host": "192.168.76.145",
+      "port": 7890,
+      "protocol": "http",
+      "auth_type": "basic",
+      "username": "user",
+      "password": "pass",
+      "token": "",
+      "weight": 1,
+      "tags": "us"
+    }
+  ]
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `host` / `port` | 上游代理地址 |
+| `protocol` | 协议：`http` / `https` / `socks5` |
+| `auth_type` | 鉴权类型：`basic` / `token` |
+| `username` / `password` | Basic Auth 凭证 |
+| `token` | Bearer Token 凭证 |
+| `weight` | 权重（预留） |
+| `tags` | 标签，如国家代码 `us`/`jp`/`hk` |
+
+> 兼容旧格式：单个 `"upstream": {...}` 自动转为 `"upstreams": [...]`
+
+### 鉴权示例
+
+**Basic Auth：**
+```json
+{ "auth": { "enabled": true, "username": "proxy", "password": "secret" } }
+```
+```bash
+curl -x http://proxy:secret@127.0.0.1:7890 https://ipinfo.io
+```
+
+**Token：**
+```json
+{ "auth": { "enabled": true, "tokens": ["my-token-xxx"] } }
+```
+```bash
+curl -x http://my-token-xxx:@127.0.0.1:7890 https://ipinfo.io
+```
+
+## 使用场景
+
+### 场景一：边缘节点（直连模式）
+
+部署在各 IP 区域的节点，只需提供出口 IP，不走上游：
+
+```bash
+pflow-cli setup   # mode: direct, 启用鉴权(token)
+pflow-cli server
+```
+
+### 场景二：中央节点（多上游模式）
+
+汇聚多个边缘节点，对外提供统一的智能代理入口：
+
+```json
+{
+  "mode": "smart",
+  "upstreams": [
+    { "host": "10.0.1.1", "port": 7890, "auth_type": "token", "token": "tok-us" },
+    { "host": "10.0.2.1", "port": 7890, "auth_type": "token", "token": "tok-jp" }
+  ],
+  "routing_strategy": "round_robin"
+}
+```
+
+配合 [ProxyPool](https://github.com/Haoke98/proxy-pool) 可实现完整的 IP 代理池服务平台。
 
 ## 打包 & 安装 & 发布
 
-以下操作均在项目根目录进行。
-
-**1. 打包**
-
-先清旧再打包，避免覆盖冲突：
-
 ```bash
+# 打包
 rm -rf ./build ./dist
 python setup.py sdist bdist_wheel
+
+# 本地安装验证
+pip install ./dist/PFlowC-4.0.0.tar.gz
+
+# 发布
+git tag v4.0.0 && git push origin v4.0.0
+# 或: twine upload ./dist/PFlowC-4.0.0.tar.gz
 ```
 
-**2. 安装（本地验证）**
+## 更新日志
 
-```bash
-pip install ./dist/PFlowC-3.0.0.tar.gz
-```
+### v4.0.0
 
-**3. 发布**
+- ✨ 全局直连模式 (`mode: direct`) — 所有流量直连，适合边缘节点
+- ✨ 多上游代理 + 可选路由策略 (round_robin / random / lowest_latency / geoip_preferred)
+- ✨ 鉴权支持: Basic Auth + Bearer Token
+- ✨ 动态鉴权回调 (`AUTH_CHECKER`) — 支持外部注入验证逻辑
+- ✨ 交互式配置向导 (`pflow-cli setup`)
+- ✨ 自动迁移旧配置格式
+- 🐛 上游 CONNECT Token 鉴权支持
 
-推送 `v*` tag 会自动触发 GitHub Actions 发布到 PyPI 并创建 GitHub Release：
+### v3.0.0
 
-```bash
-git tag v3.0.0 && git push origin v3.0.0
-```
-
-或手动发布：
-
-```bash
-twine upload ./dist/PFlowC-3.0.0.tar.gz
-```
-
-## TODO
-
-- [ ] 完善多平台系统代理自动配置
-    - [x] macOS
-    - [ ] Windows
-    - [ ] Linux
-- [ ] 完善多平台命令行代理自动配置
-    - [x] macOS (.zshrc / .bashrc)
-    - [ ] 自动检测 shell 配置文件
-    - [ ] Windows
-    - [ ] Linux
-- [x] 上游代理可配置
-- [x] 发布为 Python site-packages
-- [x] 使用 GeoIP 实现智能路由（国内直连 / 境外代理）
-- [x] 在程序内部实现流量分流（不再依赖系统 bypass_domains）
-- [x] 自动配置 Git 全局代理
-- [x] CI/CD：GitHub Actions 自动发布到 PyPI + GitHub Release
-- [ ] 发布各平台预编译包 (macOS / Windows / Linux)
-- [ ] 利用 Curses 优化控制台流量展示
-- [ ] 后台服务模式 + 状态栏组件
-- [ ] GUI 桌面应用
-- [ ] 利用 Trojan 实现可跨 GFW 的传统代理
-    - [ ] 参考 [trojan-go](https://github.com/p4gefau1t/trojan-go)
-- [ ] 与内网穿透工具集成
-    - [ ] [ZeroTier](https://github.com/zerotier/ZeroTierOne)
-    - [ ] [Tailscale](https://tailscale.com)
-- [ ] 从数据中心按地理位置拉取忽略列表
-
-## Contributing
-
-欢迎参与！无论是 Bug 反馈、功能建议还是代码贡献，都欢迎提 [Issue](https://github.com/Haoke98/FlowPilot/issues) 或 PR。
-
-如果你有这些方面的经验，特别欢迎：
-- Windows / Linux 平台的系统代理配置
-- Curses TUI 开发
-- 跨平台 GUI (Electron / Tauri)
+- 纯 asyncio CONNECT 代理，移除 mitmproxy 依赖
+- GeoIP 智能路由（国内直连 / 境外代理）
+- CI/CD 自动发布 PyPI
 
 ## License
 
 MIT · Copyright Sadam·Sadik
-
-## Acknowledgments
-
-- [geoip2](https://github.com/maxmind/GeoIP2-python) for IP geolocation
-- [dnspython](https://www.dnspython.org/) for DNS utilities

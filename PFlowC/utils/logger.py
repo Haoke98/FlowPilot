@@ -12,7 +12,11 @@ import datetime
 import logging
 import os
 
-import colorlog
+try:
+    import colorlog
+    _HAS_COLORLOG = True
+except ImportError:
+    _HAS_COLORLOG = False
 
 
 def init(filename, file_level=logging.DEBUG, console_level=logging.INFO, log_dir=os.path.join("~", "logs")):
@@ -27,12 +31,14 @@ def init(filename, file_level=logging.DEBUG, console_level=logging.INFO, log_dir
 
     # 输出到控制台
     console_handler = logging.StreamHandler()
-    # console_handler = logging.StreamHandler(sys.stdout)
-    # 日志格化字符串
-    console_handler.setFormatter(colorlog.ColoredFormatter(
-        fmt='{log_color:s}[{asctime:s}][{levelname:^7s}][{threadName:s}-{filename:s}:{lineno:d}]: {message:s}',
-        log_colors=color_config, style='{'))
-    # 指定最低日志级别：（critical > error > warning > info > debug）
+    if _HAS_COLORLOG:
+        console_handler.setFormatter(colorlog.ColoredFormatter(
+            fmt='{log_color:s}[{asctime:s}][{levelname:^7s}][{threadName:s}-{filename:s}:{lineno:d}]: {message:s}',
+            log_colors=color_config, style='{'))
+    else:
+        console_handler.setFormatter(logging.Formatter(
+            fmt='[{asctime:s}][{levelname:^7s}][{threadName:s}-{filename:s}:{lineno:d}]: {message:s}',
+            style='{', datefmt='%H:%M:%S'))
     console_handler.setLevel(console_level)
 
     # 输出到文件
