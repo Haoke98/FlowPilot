@@ -1,10 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for FlowPilot standalone binary
-# 构建: pyinstaller --clean --onefile flowpilot.spec
+# 构建: pyinstaller --clean flowpilot.spec
 # 输出: dist/pflowc
 
 a = Analysis(
-    ['__main__.py'],
+    ['PFlowC/main.py'],
     pathex=[],
     binaries=[],
     datas=[('PFlowC/utils/Country.mmdb', 'PFlowC/utils')],
@@ -12,7 +12,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['pathlib'],
     noarchive=False,
     optimize=0,
 )
