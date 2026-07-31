@@ -12,12 +12,20 @@ try:
 except ImportError:
     from distutils.core import setup
 
+import os
+
 from PFlowC.__version__ import (
     __version__, __url__, __author__, __author_email__,
     __license__, __description__,
 )
 
-long_description = open('README.md', encoding='utf-8').read()
+long_description = None
+for readme_file in ('README.md', 'README.rst'):
+    if os.path.exists(readme_file):
+        long_description = open(readme_file, encoding='utf-8').read()
+        break
+if long_description is None:
+    long_description = __description__
 
 setup(
     name='PFlowC',
@@ -42,7 +50,6 @@ setup(
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Topic :: Internet :: Proxy Servers",
         "Programming Language :: Python :: 3.8",
