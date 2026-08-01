@@ -126,19 +126,28 @@ config = Config()
 # ═══════════════════════════════════════════════════════════
 
 def _daemonize():
-    """Fork 到后台运行，脱离终端"""
-    # 第一次 fork
+    """后台运行，脱离终端（Linux: fork, Windows: 子进程）"""
+    if sys.platform == 'win32':
+        import subprocess
+        # 过滤掉 --daemon 避免子进程递归
+        args = [a for a in sys.argv if a != '--daemon']
+        subprocess.Popen(
+            args,
+            creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+            close_fds=True,
+        )
+        print("PFlowC 已转入后台运行")
+        sys.exit(0)
+
+    # Linux/macOS: double-fork
     pid = os.fork()
     if pid > 0:
         print(f"PFlowC 已转入后台运行 (PID: {pid})")
         sys.exit(0)
-    # 子进程
     os.setsid()
-    # 第二次 fork
     pid = os.fork()
     if pid > 0:
         sys.exit(0)
-    # 重定向标准流
     log_file = os.path.join(home_dir, "logs", "daemon.log")
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     fd = os.open(log_file, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
