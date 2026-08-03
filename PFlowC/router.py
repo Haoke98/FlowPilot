@@ -44,6 +44,10 @@ _geoip_country_cache = {}
 LISTEN_HOST = "0.0.0.0"
 LISTEN_PORT = 7890
 
+# CONNECT 200 响应（含版本信息）
+from PFlowC.__version__ import __version__
+_OK_RESPONSE = "HTTP/1.1 200 Connection Established\r\nServer: PFlowC/{}\r\n\r\n".format(__version__).encode()
+
 # 运行模式: "smart" (GeoIP分流) | "direct" (全局直连)
 MODE = "smart"
 
@@ -286,7 +290,7 @@ async def _handle(reader, writer):
             _type = "DIRECT"
             remote_reader, remote_writer = await asyncio.wait_for(
                 asyncio.open_connection(host, port), timeout=30)
-            writer.write(b'HTTP/1.1 200 Connection Established\r\n\r\n')
+            writer.write(_OK_RESPONSE)
             await writer.drain()
 
         # ── 模式：智能路由 (GeoIP 分流) ──────────────────
@@ -295,7 +299,7 @@ async def _handle(reader, writer):
                 _type = "DIRECT"
                 remote_reader, remote_writer = await asyncio.wait_for(
                     asyncio.open_connection(host, port), timeout=30)
-                writer.write(b'HTTP/1.1 200 Connection Established\r\n\r\n')
+                writer.write(_OK_RESPONSE)
                 await writer.drain()
             else:
                 upstream = _pick_upstream()
@@ -304,7 +308,7 @@ async def _handle(reader, writer):
                     logging.warning("[FALLBACK] 无可用上游代理，直连 {}".format(target))
                     remote_reader, remote_writer = await asyncio.wait_for(
                         asyncio.open_connection(host, port), timeout=30)
-                    writer.write(b'HTTP/1.1 200 Connection Established\r\n\r\n')
+                    writer.write(_OK_RESPONSE)
                     await writer.drain()
                 else:
                     _type = "PROXY"
