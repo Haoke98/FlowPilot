@@ -314,11 +314,11 @@ def server(port, mode, strategy, debug, daemon):
     )
 
 
-@main.command(help="生成 systemd 服务文件，实现开机自启")
+@main.command(help="生成服务文件，实现开机自启（跨平台）")
 @click.option("--mode", "-m", default=None, help="运行模式")
 @click.option("--port", "-p", default=None, type=int, help="监听端口")
 def install_service(mode, port):
-    """生成并提示安装 systemd 服务"""
+    """生成并提示安装系统服务"""
     import getpass
     python = sys.executable
     extra = ""
@@ -329,27 +329,73 @@ def install_service(mode, port):
     if p:
         extra += f" --port {p}"
     user = getpass.getuser()
+    exec_cmd = f"{python} -m PFlowC.main server{extra}"
 
-    content = SYSTEMD_SERVICE_TEMPLATE.format(
-        python=python, extra_args=extra, user=user
-    )
-    service_path = "/etc/systemd/system/pflowc.service"
-
-    click.secho("═══ systemd 服务配置 ═══", fg='cyan', bold=True)
-    click.echo()
-    click.echo(content)
-    click.echo()
-    click.secho("安装方法:", fg='yellow')
-    click.echo(f"  sudo tee {service_path} << 'EOF'")
-    click.echo(content)
-    click.echo("EOF")
-    click.echo(f"  sudo systemctl daemon-reload")
-    click.echo(f"  sudo systemctl enable --now pflowc")
-    click.echo()
-    click.echo("管理命令:")
-    click.echo("  sudo systemctl status pflowc")
-    click.echo("  sudo systemctl restart pflowc")
-    click.echo("  sudo journalctl -u pflowc -f")
+    if sys.platform == 'win32':
+        # Windows: 使用 nssm 或 sc create
+        click.secho("═══ Windows 服务配置 ═══", fg='cyan', bold=True)
+        click.echo()
+        click.secho("方式一: NSSM (推荐)", fg='yellow')
+        click.echo(f"  nssm install PFlowC \"{python}\"")
+        click.echo(f"  nssm set PFlowC AppParameters \"-m PFlowC.main server{extra}\"")
+        click.echo(f"  nssm set PFlowC AppDirectory \"{os.path.dirname(python)}\"")
+        click.echo(f"  nssm start PFlowC")
+        click.echo()
+        click.secho("方式二: sc create (Windows 原生)", fg='yellow')
+        click.echo(f"  sc create PFlowC binPath= \"{exec_cmd}\" start= auto")
+        click.echo(f"  sc start PFlowC")
+        click.echo()
+        click.secho("方式三: 计划任务开机启动", fg='yellow')
+        xml = f'''<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <Triggers><BootTrigger><Enabled>true</Enabled></BootTrigger></Triggers>
+  <Principals><Principal id="Author"><RunLevel>HighestAvailable</RunLevel></Principal></Principals>
+  <Actions><Exec><Command>{python}</Command><Arguments>-m PFlowC.main server{extra}</Arguments></Exec></Actions>
+</Task>'''
+        click.echo(f"  将以下 XML 保存为 pflowc.xml，然后:")
+        click.echo(f"  schtasks /create /xml pflowc.xml /tn PFlowC")
+        click.echo()
+        click.secho("XML 内容:", fg='cyan')
+        click.echo(xml)
+    elif sys.platform == 'darwin':
+        # macOS: launchd plist
+        plist = f'''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.flowpilot</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{python}</string><string>-m</string><string>PFlowC.main</string><string>server{extra}</string>
+    </array>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+</dict>
+</plist>'''
+        click.secho("═══ macOS launchd 配置 ═══", fg='cyan', bold=True)
+        click.echo(f"  sudo tee /Library/LaunchDaemons/com.flowpilot.plist << 'EOF'")
+        click.echo(plist)
+        click.echo("EOF")
+        click.echo(f"  sudo launchctl load /Library/LaunchDaemons/com.flowpilot.plist")
+    else:
+        # Linux: systemd
+        content = SYSTEMD_SERVICE_TEMPLATE.format(python=python, extra_args=extra, user=user)
+        service_path = "/etc/systemd/system/pflowc.service"
+        click.secho("═══ systemd 服务配置 ═══", fg='cyan', bold=True)
+        click.echo()
+        click.echo(content)
+        click.echo()
+        click.secho("安装方法:", fg='yellow')
+        click.echo(f"  sudo tee {service_path} << 'EOF'")
+        click.echo(content)
+        click.echo("EOF")
+        click.echo(f"  sudo systemctl daemon-reload")
+        click.echo(f"  sudo systemctl enable --now pflowc")
+        click.echo()
+        click.echo("管理命令:")
+        click.echo("  sudo systemctl status pflowc")
+        click.echo("  sudo systemctl restart pflowc")
+        click.echo("  sudo journalctl -u pflowc -f")
 
 
 @main.command(help="Run proxy flow controller.")
