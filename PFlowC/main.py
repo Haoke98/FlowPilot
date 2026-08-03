@@ -226,7 +226,7 @@ def setup():
                 "weight": 1,
                 "tags": tags,
             })
-            click.secho("  ✓ 已添加 {}/{}:{}".format(protocol, host, port_u), fg='green')
+            click.secho("  [OK] 已添加 {}/{}:{}".format(protocol, host, port_u), fg='green')
             if not click.confirm("  继续添加?", default=False):
                 break
 
@@ -267,7 +267,7 @@ def setup():
         config.ctx["auth"] = DEFAULT_CONFIG["auth"]
 
     config.save()
-    click.secho("\n✓ 配置已保存到 {}".format(config_fp), fg='green', bold=True)
+    click.secho("\n[OK] 配置已保存到 {}".format(config_fp), fg='green', bold=True)
 
 
 @main.command(help="查看当前配置")
@@ -288,7 +288,7 @@ def show_config():
                 i + 1, u.get("protocol", "http"), u["host"], u["port"], tags_str, auth_str))
 
     auth = config.get_auth()
-    click.echo("  鉴权: {}".format("✓ 已启用" if auth.get("enabled") else "✗ 未启用"))
+    click.echo("  鉴权: {}".format("[OK] 已启用" if auth.get("enabled") else "[FAIL] 未启用"))
 
 
 @main.command(help="启动代理路由服务")
@@ -355,7 +355,7 @@ def install_service(mode, port):
             capture_output=True, text=True, timeout=10
         )
         if r.returncode != 0 and "already exists" not in r.stderr:
-            click.secho(f"✗ 创建失败:\n{r.stderr}", fg='red')
+            click.secho(f"[FAIL] 创建失败:\n{r.stderr}", fg='red')
             click.secho("请以管理员身份运行 PowerShell 后重试", fg='yellow')
             return
 
@@ -363,18 +363,18 @@ def install_service(mode, port):
         subprocess.run([sc, "failure", svc_name, "reset=", "86400", "actions=", "restart/5000/restart/10000/restart/30000"],
                       capture_output=True, timeout=5)
         subprocess.run([sc, "config", svc_name, "start=", "auto"], capture_output=True, timeout=5)
-        click.secho(f"✓ 服务 {svc_name} 已创建 (开机自动启动)", fg='green')
+        click.secho(f"[OK] 服务 {svc_name} 已创建 (开机自动启动)", fg='green')
 
         # 尝试启动（可能需要较长时间加载 Python）
         click.secho(f"  正在启动服务 (最长等待60秒)...", fg='cyan')
         try:
             r = subprocess.run([sc, "start", svc_name], capture_output=True, text=True, timeout=60)
             if r.returncode == 0:
-                click.secho(f"✓ 服务 {svc_name} 已启动", fg='green')
+                click.secho(f"[OK] 服务 {svc_name} 已启动", fg='green')
             else:
                 raise Exception(r.stderr)
         except Exception as e:
-            click.secho(f"⚠ 自动启动失败，请手动启动: services.msc → 找到 PFlowC → 右键启动", fg='yellow')
+            click.secho(f"[WARN] 自动启动失败，请手动启动: services.msc → 找到 PFlowC → 右键启动", fg='yellow')
             click.secho(f"  如果仍然启动失败，可能需要 NSSM 包装 Python 服务:", fg='yellow')
             click.secho(f"  1. 下载 NSSM: https://nssm.cc/download", fg='yellow')
             click.secho(f'  2. nssm install PFlowC "{python}" "-m" "PFlowC.main" "server{extra}"', fg='yellow')
