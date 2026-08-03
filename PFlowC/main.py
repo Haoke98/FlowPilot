@@ -332,31 +332,52 @@ def install_service(mode, port):
     exec_cmd = f"{python} -m PFlowC.main server{extra}"
 
     if sys.platform == 'win32':
-        # Windows: 使用 nssm 或 sc create
-        click.secho("═══ Windows 服务配置 ═══", fg='cyan', bold=True)
+        import subprocess
+        # Windows: 使用 sc.exe 创建服务（注意：PowerShell 中 sc 是 Set-Content 别名）
+        svc_name = "PFlowC"
+        sc = "sc.exe"  # 必须用 .exe 避免 PowerShell 别名冲突
+
+        click.secho(f"安装 Windows 服务 {svc_name}...", fg='cyan')
+
+        # 检查管理员权限
+        try:
+            r = subprocess.run([sc, "query", svc_name], capture_output=True, timeout=5)
+            if r.returncode == 0:
+                click.secho(f"  服务 {svc_name} 已存在，先删除...", fg='yellow')
+                subprocess.run([sc, "stop", svc_name], capture_output=True, timeout=10)
+                subprocess.run([sc, "delete", svc_name], capture_output=True, timeout=10)
+        except Exception:
+            pass
+
+        # 创建服务
+        r = subprocess.run(
+            [sc, "create", svc_name, "binPath=", exec_cmd, "start=", "auto"],
+            capture_output=True, text=True, timeout=10
+        )
+        if r.returncode != 0 and "already exists" not in r.stderr:
+            click.secho(f"✗ 创建失败:\n{r.stderr}", fg='red')
+            click.secho("请以管理员身份运行 PowerShell 后重试", fg='yellow')
+            return
+
+        # 配置服务
+        subprocess.run([sc, "failure", svc_name, "reset=", "86400", "actions=", "restart/5000/restart/10000/restart/30000"],
+                      capture_output=True, timeout=5)
+        subprocess.run([sc, "config", svc_name, "start=", "auto"], capture_output=True, timeout=5)
+
+        # 启动服务
+        r = subprocess.run([sc, "start", svc_name], capture_output=True, text=True, timeout=15)
+        if r.returncode == 0:
+            click.secho(f"✓ 服务 {svc_name} 已创建并启动", fg='green')
+        elif "already" in r.stderr.lower() or "running" in r.stdout.lower():
+            click.secho(f"✓ 服务 {svc_name} 已在运行", fg='green')
+        else:
+            click.secho(f"⚠ 创建成功但启动失败:\n{r.stderr}", fg='yellow')
+
         click.echo()
-        click.secho("方式一: NSSM (推荐)", fg='yellow')
-        click.echo(f"  nssm install PFlowC \"{python}\"")
-        click.echo(f"  nssm set PFlowC AppParameters \"-m PFlowC.main server{extra}\"")
-        click.echo(f"  nssm set PFlowC AppDirectory \"{os.path.dirname(python)}\"")
-        click.echo(f"  nssm start PFlowC")
-        click.echo()
-        click.secho("方式二: sc create (Windows 原生)", fg='yellow')
-        click.echo(f"  sc create PFlowC binPath= \"{exec_cmd}\" start= auto")
-        click.echo(f"  sc start PFlowC")
-        click.echo()
-        click.secho("方式三: 计划任务开机启动", fg='yellow')
-        xml = f'''<?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-  <Triggers><BootTrigger><Enabled>true</Enabled></BootTrigger></Triggers>
-  <Principals><Principal id="Author"><RunLevel>HighestAvailable</RunLevel></Principal></Principals>
-  <Actions><Exec><Command>{python}</Command><Arguments>-m PFlowC.main server{extra}</Arguments></Exec></Actions>
-</Task>'''
-        click.echo(f"  将以下 XML 保存为 pflowc.xml，然后:")
-        click.echo(f"  schtasks /create /xml pflowc.xml /tn PFlowC")
-        click.echo()
-        click.secho("XML 内容:", fg='cyan')
-        click.echo(xml)
+        click.echo("管理命令 (管理员 PowerShell):")
+        click.echo(f"  sc.exe start {svc_name}")
+        click.echo(f"  sc.exe stop {svc_name}")
+        click.echo(f"  sc.exe delete {svc_name}")
     elif sys.platform == 'darwin':
         # macOS: launchd plist
         plist = f'''<?xml version="1.0" encoding="UTF-8"?>
