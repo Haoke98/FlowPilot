@@ -354,10 +354,24 @@ def install_service(mode, port):
             [sc, "create", svc_name, "binPath=", exec_cmd, "start=", "auto"],
             capture_output=True, text=True, timeout=10
         )
-        if r.returncode != 0 and "already exists" not in r.stderr:
-            click.secho(f"[FAIL] 创建失败:\n{r.stderr}", fg='red')
-            click.secho("请以管理员身份运行 PowerShell 后重试", fg='yellow')
-            return
+        if r.returncode != 0:
+            err_msg = (r.stderr + r.stdout).strip()
+            # 1072: 服务标记为删除中
+            if "1072" in err_msg or "标记为删除" in err_msg:
+                svc_name = "PFlowC-v2"
+                click.secho(f"  服务名冲突，改用 {svc_name}", fg='yellow')
+                r = subprocess.run(
+                    [sc, "create", svc_name, "binPath=", exec_cmd, "start=", "auto"],
+                    capture_output=True, text=True, timeout=10
+                )
+                if r.returncode != 0:
+                    click.secho(f"[FAIL] {svc_name}: {(r.stderr+r.stdout).strip()}", fg='red')
+                    click.secho("提示: 服务标记删除中，重启系统后重试", fg='yellow')
+                    return
+            else:
+                click.secho(f"[FAIL] {err_msg}", fg='red')
+                click.secho("请以管理员身份运行后重试", fg='yellow')
+                return
 
         # 配置服务（失败自动重启）
         subprocess.run([sc, "failure", svc_name, "reset=", "86400", "actions=", "restart/5000/restart/10000/restart/30000"],
