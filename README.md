@@ -3,7 +3,7 @@
 **智能代理路由器** — 纯 Python asyncio CONNECT 代理。支持 GeoIP 智能分流 · 多上游代理池 · 全局直连 · Token/Basic 鉴权 · 后台守护 · systemd 自启。
 
 <div align="right">
-  <img src="https://komarev.com/ghpvc/?username=Haoke98&repo=FlowPilot&color=07C160&label=👁️+Views&style=flat-square" alt="views"/>
+  <img src="https://komarev.com/ghpvc/?username=Haoke98-FlowPilot&color=07C160&label=👁️+Views&style=flat-square" alt="views"/>
 </div>
 
 ## 架构
