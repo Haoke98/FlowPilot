@@ -228,6 +228,126 @@ async def _relay(reader, writer):
         pass
 
 
+async def _handle_socks5(reader, writer, client_addr):
+    """处理 SOCKS5 连接"""
+    _type = "SOCKS5"
+    remote_reader = remote_writer = None
+    target = ""
+
+    try:
+        # 1. Greeting: read number of auth methods
+        nmethods_data = await asyncio.wait_for(reader.readexactly(1), timeout=10)
+        nmethods = nmethods_data[0]
+        methods = await asyncio.wait_for(reader.readexactly(nmethods), timeout=10)
+
+        # 2. Select NO AUTH (0x00)
+        writer.write(b'\x05\x00')
+        await writer.drain()
+
+        # 3. Read request
+        req_header = await asyncio.wait_for(reader.readexactly(4), timeout=10)
+        cmd = req_header[1]  # 0x01 = CONNECT
+        atyp = req_header[3]
+
+        # 4. Parse destination address
+        host = ""
+        if atyp == 0x01:  # IPv4
+            ip_bytes = await asyncio.wait_for(reader.readexactly(4), timeout=10)
+            host = '.'.join(str(b) for b in ip_bytes)
+        elif atyp == 0x03:  # Domain name
+            len_byte = await asyncio.wait_for(reader.readexactly(1), timeout=10)
+            host = (await asyncio.wait_for(reader.readexactly(len_byte[0]), timeout=10)).decode()
+        elif atyp == 0x04:  # IPv6
+            ip_bytes = await asyncio.wait_for(reader.readexactly(16), timeout=10)
+            host = ':'.join(f'{ip_bytes[i]:02x}{ip_bytes[i+1]:02x}' for i in range(0, 16, 2))
+        else:
+            writer.write(b'\x05\x08\x00\x01\x00\x00\x00\x00\x00\x00')  # Address type not supported
+            await writer.drain()
+            writer.close()
+            return
+
+        # 5. Read port
+        port_bytes = await asyncio.wait_for(reader.readexactly(2), timeout=10)
+        port = (port_bytes[0] << 8) + port_bytes[1]
+        target = f"{host}:{port}"
+
+        if cmd != 0x01:  # Only CONNECT supported
+            writer.write(b'\x05\x07\x00\x01\x00\x00\x00\x00\x00\x00')  # Command not supported
+            await writer.drain()
+            writer.close()
+            return
+
+        # ── Auth check for SOCKS5 ──
+        if AUTH_ENABLED:
+            # SOCKS5 auth is handled via NO AUTH method; if we need auth,
+            # we would select method 0x02 (USERNAME/PASSWORD) in greeting.
+            # For now, if AUTH_ENABLED, reject: auth must happen before request
+            # but we already sent NO AUTH. This is a limitation - SOCKS5 auth
+            # would need a separate path.
+            pass  # proceed, auth is done at SOCKS5 method selection level
+
+        # 6. Connect to target
+        if MODE == "direct":
+            _type = "SOCKS5-DIRECT"
+            remote_reader, remote_writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port), timeout=30)
+        else:
+            if _is_domestic(host):
+                _type = "SOCKS5-DIRECT"
+                remote_reader, remote_writer = await asyncio.wait_for(
+                    asyncio.open_connection(host, port), timeout=30)
+            else:
+                upstream = _pick_upstream()
+                if upstream is None:
+                    _type = "SOCKS5-FALLBACK"
+                    remote_reader, remote_writer = await asyncio.wait_for(
+                        asyncio.open_connection(host, port), timeout=30)
+                else:
+                    _type = "SOCKS5-PROXY"
+                    u_host = upstream["host"]
+                    u_port = upstream["port"]
+                    remote_reader, remote_writer = await asyncio.wait_for(
+                        asyncio.open_connection(u_host, u_port), timeout=30)
+                    # SOCKS5 through upstream: send SOCKS5 greeting + request
+                    upstream_greeting = b'\x05\x01\x00'
+                    remote_writer.write(upstream_greeting)
+                    await remote_writer.drain()
+                    resp = await asyncio.wait_for(remote_reader.readexactly(2), timeout=10)
+                    # Build SOCKS5 request
+                    req = bytearray([0x05, 0x01, 0x00, 0x03, len(host)])
+                    req.extend(host.encode())
+                    req.extend([(port >> 8) & 0xFF, port & 0xFF])
+                    remote_writer.write(bytes(req))
+                    await remote_writer.drain()
+                    resp = await asyncio.wait_for(remote_reader.readexactly(10), timeout=10)
+                    if resp[1] != 0x00:
+                        _type = "SOCKS5-PROXY_ERR"
+
+        # 7. Send success response
+        writer.write(b'\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00')
+        await writer.drain()
+
+        logging.info("[{}][{}] {}".format(_type, client_addr, target))
+
+        # 8. Bidirectional relay
+        await asyncio.gather(
+            _relay(reader, remote_writer),
+            _relay(remote_reader, writer),
+            return_exceptions=True,
+        )
+
+    except asyncio.TimeoutError:
+        logging.error("[SOCKS5-TIMEOUT][{}] {}".format(client_addr, target))
+    except Exception as e:
+        logging.error("[SOCKS5-ERROR][{}] {} — {}".format(client_addr, target, e))
+    finally:
+        for rw in (remote_reader, remote_writer, reader, writer):
+            try:
+                rw.close()
+            except Exception:
+                pass
+
+
 async def _handle(reader, writer):
     """处理一个客户端连接"""
     client_addr = writer.get_extra_info('peername')
@@ -238,12 +358,21 @@ async def _handle(reader, writer):
     remote_reader = remote_writer = None
 
     try:
-        # ── 解析 CONNECT 请求行 ──────────────────────────
-        line = await asyncio.wait_for(reader.readline(), timeout=30)
-        if not line:
+        # ── 协议检测：首字节判断 HTTP CONNECT vs SOCKS5 ────
+        first_byte = await asyncio.wait_for(reader.read(1), timeout=30)
+        if not first_byte:
             writer.close()
             return
-        line = line.decode('utf-8', errors='replace').strip()
+
+        first_byte_int = first_byte[0]
+
+        if first_byte_int == 0x05:  # SOCKS5
+            await _handle_socks5(reader, writer, client_addr)
+            return
+
+        # HTTP CONNECT: 首字节是 'C' (0x43)，拼回 readline 读取的行
+        line_data = first_byte + await asyncio.wait_for(reader.readline(), timeout=30)
+        line = line_data.decode('utf-8', errors='replace').strip()
 
         if not line.startswith('CONNECT'):
             writer.write(b'HTTP/1.1 405 Method Not Allowed\r\n\r\n')

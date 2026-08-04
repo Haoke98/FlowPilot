@@ -22,6 +22,10 @@ def set_all_proxy(host, port, bypass_domains):
         from PFlowC.proxy_helper.macosx import set_web_proxy, set_cmd_proxy
         set_web_proxy(host, port, bypass_domains)
         set_cmd_proxy(host, port, bypass_domains)
+    elif platform.system() == "Linux":
+        from PFlowC.proxy_helper.linux import set_web_proxy, set_cmd_proxy
+        set_web_proxy(host, port, bypass_domains)
+        set_cmd_proxy(host, port, bypass_domains)
     # Git 代理全平台通用
     set_git_proxy(host, port)
 
@@ -29,6 +33,10 @@ def set_all_proxy(host, port, bypass_domains):
 def clear_all_proxy():
     if platform.system() == "Darwin":
         from PFlowC.proxy_helper.macosx import stop_web_proxy, clear_cmd_proxy
+        stop_web_proxy()
+        clear_cmd_proxy()
+    elif platform.system() == "Linux":
+        from PFlowC.proxy_helper.linux import stop_web_proxy, clear_cmd_proxy
         stop_web_proxy()
         clear_cmd_proxy()
     # Git 代理全平台通用
